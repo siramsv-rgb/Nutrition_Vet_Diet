@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VHN Nutrition Compare</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f5f7fa;color:#2d3748;font-size:14px}
+header{background:#1a365d;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px}
+header h1{font-size:18px;font-weight:700}
+header span{font-size:12px;opacity:.7}
+.container{max-width:1400px;margin:0 auto;padding:16px}
+
+/* Filter bar */
+.filter-bar{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:11px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.04em}
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{padding:4px 11px;border-radius:20px;border:1.5px solid #cbd5e0;background:#fff;cursor:pointer;font-size:12px;font-weight:500;color:#4a5568;transition:all .15s}
+.pill.active{background:#1a365d;color:#fff;border-color:#1a365d}
+.pill-brand-rc.active{background:#dd6b20;border-color:#dd6b20}
+.pill-brand-hills.active{background:#276749;border-color:#276749}
+.pill-brand-purina.active{background:#2b6cb0;border-color:#2b6cb0}
+
+/* View toggle */
+.view-toggle{margin-left:auto;display:flex;gap:6px}
+.btn{padding:5px 13px;border-radius:6px;border:1.5px solid #cbd5e0;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#4a5568;transition:all .15s}
+.btn.active,.btn:hover{background:#1a365d;color:#fff;border-color:#1a365d}
+
+/* Mode tabs */
+.mode-tabs{display:flex;gap:8px;margin-bottom:14px}
+.tab{padding:7px 16px;border-radius:8px;border:1.5px solid #cbd5e0;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#718096;transition:all .15s}
+.tab.active{background:#1a365d;color:#fff;border-color:#1a365d}
+
+/* Cards grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:2px solid transparent;cursor:pointer;transition:all .15s;position:relative}
+.card:hover{box-shadow:0 3px 10px rgba(0,0,0,.14)}
+.card.selected{border-color:#1a365d;box-shadow:0 0 0 3px rgba(26,54,93,.15)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-name{font-weight:700;font-size:13px;line-height:1.3}
+.tag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tag-purina{background:#bee3f8;color:#1a365d}
+.tag-rc{background:#feebc8;color:#7b341e}
+.tag-hills{background:#c6f6d5;color:#1a4731}
+.indication{font-size:11px;color:#718096;margin:4px 0 10px;line-height:1.4}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.metric{background:#f7fafc;border-radius:6px;padding:7px 9px}
+.metric-label{font-size:10px;color:#718096;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.metric-val{font-size:17px;font-weight:800;color:#1a365d;margin-top:1px}
+.metric-unit{font-size:10px;color:#a0aec0}
+.energy-bar-wrap{margin-top:10px}
+.energy-bar-label{font-size:10px;color:#718096;margin-bottom:3px;display:flex;justify-content:space-between}
+.energy-bar{height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden}
+.energy-bar-fill{height:100%;background:linear-gradient(90deg,#1a365d,#4299e1);border-radius:3px;transition:width .4s}
+.check-badge{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#1a365d;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.card.selected .check-badge{opacity:1}
+.form-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
+.form-dry{background:#ebf8ff;color:#2b6cb0}
+.form-wet{background:#e6fffa;color:#276749}
+
+/* Comparison table */
+.compare-panel{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.compare-panel h2{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a365d}
+.cmp-table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{padding:9px 12px;text-align:center;font-size:12px;border-bottom:1px solid #e2e8f0}
+th{background:#f7fafc;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.03em;font-size:11px}
+td:first-child,th:first-child{text-align:left;width:150px}
+.td-val{font-weight:700;font-size:13px}
+.bar-cell{display:flex;align-items:center;gap:6px}
+.bar-mini{flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;min-width:60px}
+.bar-mini-fill{height:100%;border-radius:4px}
+.bar-protein{background:#4299e1}
+.bar-fat{background:#ed8936}
+.bar-carbs{background:#48bb78}
+.bar-fiber{background:#9f7aea}
+.bar-energy{background:#f56565}
+tr.highlight{background:#ebf8ff}
+
+/* Chart section */
+.chart-section{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-top:14px}
+.chart-section h2{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a365d}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-box{position:relative;height:320px}
+@media(max-width:700px){.chart-grid{grid-template-columns:1fr}}
+
+/* Action bar */
+.action-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.selected-count{font-size:13px;color:#4a5568;font-weight:600}
+.btn-clear{padding:5px 12px;border-radius:6px;border:1.5px solid #e53e3e;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#e53e3e}
+.btn-clear:hover{background:#e53e3e;color:#fff}
+.empty{text-align:center;padding:60px 20px;color:#a0aec0}
+.empty svg{margin-bottom:12px;opacity:.3}
+
+/* Tooltip */
+.tooltip-note{font-size:10px;color:#a0aec0;margin-top:6px;font-style:italic}
+</style>
+</head>
+<body>
+<header>
+  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+  <h1>VHN Nutrition Compare</h1>
+  <span>Veterinary Health Nutrition — per 100 kcal ME &amp; kcal/100g</span>
+</header>
+
+<div class="container">
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Brand</label>
+      <div class="pills" id="brandPills">
+        <div class="pill pill-brand-purina active" data-val="all-brand" onclick="setBrand('all',this)">All</div>
+        <div class="pill pill-brand-purina" data-val="Purina" onclick="setBrand('Purina',this)">Purina</div>
+        <div class="pill pill-brand-rc" data-val="Royal Canin" onclick="setBrand('Royal Canin',this)">Royal Canin</div>
+        <div class="pill pill-brand-hills" data-val="Hill's" onclick="setBrand('Hill\'s',this)">Hill's</div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Species</label>
+      <div class="pills" id="speciesPills">
+        <div class="pill active" onclick="setSpecies('all',this)">All</div>
+        <div class="pill" onclick="setSpecies('Dog',this)">Dog</div>
+        <div class="pill" onclick="setSpecies('Cat',this)">Cat</div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Form</label>
+      <div class="pills" id="formPills">
+        <div class="pill active" onclick="setForm('all',this)">All</div>
+        <div class="pill" onclick="setForm('Dry',this)">Dry</div>
+        <div class="pill" onclick="setForm('Wet',this)">Wet</div>
+      </div>
+    </div>
+    <div class="filter-group" style="flex:1;min-width:160px">
+      <label>Search</label>
+      <input id="searchBox" type="text" placeholder="ชื่อสูตร / Indication..." oninput="renderCards()"
+        style="padding:5px 10px;border:1.5px solid #cbd5e0;border-radius:6px;font-size:13px;width:100%">
+    </div>
+    <div class="view-toggle">
+      <button class="btn active" onclick="setView('card',this)">Cards</button>
+      <button class="btn" onclick="setView('compare',this)">Compare</button>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <div class="tab active" onclick="setMetric('100kcal',this)">per 100 kcal ME</div>
+    <div class="tab" onclick="setMetric('100g',this)">per 100g (as fed)</div>
+  </div>
+
+  <div id="cardView">
+    <div class="action-bar">
+      <span class="selected-count" id="selCount">0 selected</span>
+      <button class="btn-clear" onclick="clearSelection()">Clear</button>
+      <span style="font-size:12px;color:#a0aec0">Click cards to select for comparison</span>
+    </div>
+    <div class="grid" id="cardGrid"></div>
+  </div>
+
+  <div id="compareView" style="display:none">
+    <div class="compare-panel">
+      <h2>📊 Comparison Table</h2>
+      <div class="cmp-table-wrap">
+        <table id="cmpTable"></table>
+      </div>
+    </div>
+    <div class="chart-section">
+      <h2>Charts</h2>
+      <div class="chart-grid">
+        <div class="chart-box"><canvas id="chartProtein"></canvas></div>
+        <div class="chart-box"><canvas id="chartFat"></canvas></div>
+        <div class="chart-box"><canvas id="chartCarbs"></canvas></div>
+        <div class="chart-box"><canvas id="chartMacro"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const FOODS = [
+  // ── PURINA PRO PLAN VD ── (Canine)
+  {id:'pu_en_dry', brand:'Purina', name:'EN Gastrointestinal', species:'Dog', form:'Dry',
+   indication:'Acute/Chronic GI Disease / EPI / Malabsorption',
+   energy_per_100g:384,
+   protein_per_100kcal:6.9, fat_per_100kcal:3.1, carbs_per_100kcal:12.0, fiber_per_100kcal:0.9},
+  {id:'pu_en_wet', brand:'Purina', name:'EN Gastrointestinal', species:'Dog', form:'Wet',
+   indication:'Acute/Chronic GI Disease / EPI / Malabsorption',
+   energy_per_100g:95,
+   protein_per_100kcal:8.4, fat_per_100kcal:5.3, carbs_per_100kcal:5.3, fiber_per_100kcal:0.5},
+  {id:'pu_nc_dry', brand:'Purina', name:'NC NeuroCare', species:'Dog', form:'Dry',
+   indication:'Epilepsy / Cognitive Dysfunction / Neurological Disorders',
+   energy_per_100g:374,
+   protein_per_100kcal:5.9, fat_per_100kcal:4.0, carbs_per_100kcal:11.2, fiber_per_100kcal:0.9},
+  {id:'pu_ur_dry', brand:'Purina', name:'UR Urinary St/Ox', species:'Dog', form:'Dry',
+   indication:'Struvite & Oxalate Urolithiasis',
+   energy_per_100g:401,
+   protein_per_100kcal:6.5, fat_per_100kcal:3.6, carbs_per_100kcal:10.7, fiber_per_100kcal:0.5},
+  {id:'pu_ur_wet', brand:'Purina', name:'UR Urinary St/Ox', species:'Dog', form:'Wet',
+   indication:'Struvite & Oxalate Urolithiasis',
+   energy_per_100g:98,
+   protein_per_100kcal:9.2, fat_per_100kcal:5.1, carbs_per_100kcal:4.6, fiber_per_100kcal:0.5},
+  // Purina Feline
+  {id:'pu_en_cat_dry', brand:'Purina', name:'EN Gastrointestinal', species:'Cat', form:'Dry',
+   indication:'Acute/Chronic GI Disease / EPI',
+   energy_per_100g:421,
+   protein_per_100kcal:8.3, fat_per_100kcal:4.5, carbs_per_100kcal:8.6, fiber_per_100kcal:0.5},
+  {id:'pu_ur_cat_dry', brand:'Purina', name:'UR Urinary St/Ox', species:'Cat', form:'Dry',
+   indication:'Struvite & Oxalate Urolithiasis',
+   energy_per_100g:394,
+   protein_per_100kcal:8.4, fat_per_100kcal:4.3, carbs_per_100kcal:9.9, fiber_per_100kcal:0.5},
+  {id:'pu_dm_cat_dry', brand:'Purina', name:'DM Dietetic Management', species:'Cat', form:'Dry',
+   indication:'Diabetes Mellitus / Obesity',
+   energy_per_100g:469,
+   protein_per_100kcal:12.1, fat_per_100kcal:4.5, carbs_per_100kcal:2.6, fiber_per_100kcal:0.2},
+
+  // ── ROYAL CANIN VHN ── (Canine)
+  {id:'rc_hypo_dog_dry', brand:'Royal Canin', name:'Hypoallergenic', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction (Dermatological/GI)',
+   energy_per_100g:392,
+   protein_per_100kcal:4.60, fat_per_100kcal:4.21, carbs_per_100kcal:12.33, fiber_per_100kcal:0.51},
+  {id:'rc_hypo_mc_dog_dry', brand:'Royal Canin', name:'Hypoallergenic Moderate Calorie', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction / Overweight Tendency',
+   energy_per_100g:372,
+   protein_per_100kcal:6.18, fat_per_100kcal:3.22, carbs_per_100kcal:12.74, fiber_per_100kcal:1.40},
+  {id:'rc_sc_dog_dry', brand:'Royal Canin', name:'Sensitivity Control', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:390,
+   protein_per_100kcal:5.13, fat_per_100kcal:3.85, carbs_per_100kcal:12.70, fiber_per_100kcal:0.49},
+  {id:'rc_gi_dog_dry', brand:'Royal Canin', name:'Gastrointestinal', species:'Dog', form:'Dry',
+   indication:'Acute/Chronic Diarrhea / GI Disease',
+   energy_per_100g:394,
+   protein_per_100kcal:6.25, fat_per_100kcal:4.81, carbs_per_100kcal:9.09, fiber_per_100kcal:0.41},
+  {id:'rc_gi_dog_wet', brand:'Royal Canin', name:'Gastrointestinal', species:'Dog', form:'Wet',
+   indication:'Acute/Chronic Diarrhea / GI Disease',
+   energy_per_100g:110.4,
+   protein_per_100kcal:8.06, fat_per_100kcal:5.34, carbs_per_100kcal:6.57, fiber_per_100kcal:1.81},
+  {id:'rc_gihf_dog_dry', brand:'Royal Canin', name:'Gastrointestinal High Fibre', species:'Dog', form:'Dry',
+   indication:'Fibre Responsive Colitis / CILBD',
+   energy_per_100g:317,
+   protein_per_100kcal:7.72, fat_per_100kcal:2.52, carbs_per_100kcal:10.28, fiber_per_100kcal:3.50},
+  {id:'rc_gilf_dog_dry', brand:'Royal Canin', name:'Gastrointestinal Low Fat', species:'Dog', form:'Dry',
+   indication:'Pancreatitis / Hyperlipidemia',
+   energy_per_100g:317,
+   protein_per_100kcal:7.72, fat_per_100kcal:2.05, carbs_per_100kcal:10.31, fiber_per_100kcal:3.50},
+  {id:'rc_hep_dog_dry', brand:'Royal Canin', name:'Hepatic', species:'Dog', form:'Dry',
+   indication:'Hepatic Disease / Hepatic Encephalopathy',
+   energy_per_100g:282,
+   protein_per_100kcal:4.71, fat_per_100kcal:4.27, carbs_per_100kcal:14.05, fiber_per_100kcal:0.63},
+  {id:'rc_uro_dog_dry', brand:'Royal Canin', name:'Urinary S/O', species:'Dog', form:'Dry',
+   indication:'Struvite Urolithiasis / FLUTD',
+   energy_per_100g:388,
+   protein_per_100kcal:4.64, fat_per_100kcal:4.38, carbs_per_100kcal:12.09, fiber_per_100kcal:0.57},
+  {id:'rc_uro_dog_wet', brand:'Royal Canin', name:'Urinary S/O Loaf', species:'Dog', form:'Wet',
+   indication:'Struvite Urolithiasis / FLUTD',
+   energy_per_100g:96,
+   protein_per_100kcal:8.37, fat_per_100kcal:6.28, carbs_per_100kcal:4.81, fiber_per_100kcal:1.46},
+  {id:'rc_uc_dog_dry', brand:'Royal Canin', name:'Urinary U/C', species:'Dog', form:'Dry',
+   indication:'Urate Urolithiasis (Purine Restriction)',
+   energy_per_100g:383,
+   protein_per_100kcal:4.70, fat_per_100kcal:3.92, carbs_per_100kcal:13.07, fiber_per_100kcal:0.58},
+  {id:'rc_cardiac_dog_dry', brand:'Royal Canin', name:'Cardiac', species:'Dog', form:'Dry',
+   indication:'Cardiovascular Disease / Heart Failure',
+   energy_per_100g:416,
+   protein_per_100kcal:6.25, fat_per_100kcal:4.81, carbs_per_100kcal:9.09, fiber_per_100kcal:0.41},
+  {id:'rc_cardiac_dog_wet', brand:'Royal Canin', name:'Cardiac', species:'Dog', form:'Wet',
+   indication:'Cardiovascular Disease / Heart Failure',
+   energy_per_100g:131,
+   protein_per_100kcal:6.16, fat_per_100kcal:5.40, carbs_per_100kcal:6.93, fiber_per_100kcal:0.61},
+  {id:'rc_er_dog_dry', brand:'Royal Canin', name:'Early Renal', species:'Dog', form:'Dry',
+   indication:'Early CKD (IRIS Stage 1–early 2)',
+   energy_per_100g:395,
+   protein_per_100kcal:5.70, fat_per_100kcal:4.05, carbs_per_100kcal:11.50, fiber_per_100kcal:0.38},
+  {id:'rc_er_dog_wet', brand:'Royal Canin', name:'Early Renal', species:'Dog', form:'Wet',
+   indication:'Early CKD (IRIS Stage 1–early 2)',
+   energy_per_100g:95,
+   protein_per_100kcal:5.77, fat_per_100kcal:6.29, carbs_per_100kcal:6.81, fiber_per_100kcal:0.73},
+  {id:'rc_renal_dog_dry', brand:'Royal Canin', name:'Renal', species:'Dog', form:'Dry',
+   indication:'CKD (IRIS Stage 2–4) / Proteinuria',
+   energy_per_100g:398,
+   protein_per_100kcal:3.51, fat_per_100kcal:4.52, carbs_per_100kcal:13.20, fiber_per_100kcal:0.60},
+  {id:'rc_renal_dog_wet', brand:'Royal Canin', name:'Renal', species:'Dog', form:'Wet',
+   indication:'CKD (IRIS Stage 2–4)',
+   energy_per_100g:95,
+   protein_per_100kcal:5.76, fat_per_100kcal:6.29, carbs_per_100kcal:6.81, fiber_per_100kcal:0.73},
+  {id:'rc_adult_l_dog_dry', brand:'Royal Canin', name:'Adult Large Dogs', species:'Dog', form:'Dry',
+   indication:'Health Management Adult Large Breed',
+   energy_per_100g:394,
+   protein_per_100kcal:6.34, fat_per_100kcal:4.31, carbs_per_100kcal:10.27, fiber_per_100kcal:0.46},
+  {id:'rc_adult_m_dog_dry', brand:'Royal Canin', name:'Adult Medium Dogs', species:'Dog', form:'Dry',
+   indication:'Health Management Adult Medium Breed',
+   energy_per_100g:392,
+   protein_per_100kcal:5.82, fat_per_100kcal:4.06, carbs_per_100kcal:11.14, fiber_per_100kcal:0.36},
+  {id:'rc_adult_s_dog_dry', brand:'Royal Canin', name:'Adult Small Dogs', species:'Dog', form:'Dry',
+   indication:'Health Management Adult Small Breed',
+   energy_per_100g:395,
+   protein_per_100kcal:6.35, fat_per_100kcal:4.05, carbs_per_100kcal:11.49, fiber_per_100kcal:0.38},
+  {id:'rc_mature_dog_dry', brand:'Royal Canin', name:'Mature Consult', species:'Dog', form:'Dry',
+   indication:'Senior Health Management',
+   energy_per_100g:348,
+   protein_per_100kcal:7.19, fat_per_100kcal:4.60, carbs_per_100kcal:10.87, fiber_per_100kcal:0.66},
+  {id:'rc_mature_s_dog_dry', brand:'Royal Canin', name:'Mature Consult Small Dogs', species:'Dog', form:'Dry',
+   indication:'Senior Health Management Small Breed',
+   energy_per_100g:342,
+   protein_per_100kcal:6.72, fat_per_100kcal:4.09, carbs_per_100kcal:11.98, fiber_per_100kcal:0.67},
+  {id:'rc_neut_l_dog_dry', brand:'Royal Canin', name:'Neutered Adult Large Dogs', species:'Dog', form:'Dry',
+   indication:'Neutered Adult Large Breed Weight Management',
+   energy_per_100g:330,
+   protein_per_100kcal:8.49, fat_per_100kcal:3.36, carbs_per_100kcal:11.62, fiber_per_100kcal:0.66},
+  {id:'rc_neut_m_dog_dry', brand:'Royal Canin', name:'Neutered Adult Medium Dogs', species:'Dog', form:'Dry',
+   indication:'Neutered Adult Medium Breed Weight Management',
+   energy_per_100g:343,
+   protein_per_100kcal:7.30, fat_per_100kcal:4.08, carbs_per_100kcal:11.18, fiber_per_100kcal:0.61},
+  {id:'rc_neut_s_dog_dry', brand:'Royal Canin', name:'Neutered Adult Small Dogs', species:'Dog', form:'Dry',
+   indication:'Neutered Adult Small Breed Weight Management',
+   energy_per_100g:331,
+   protein_per_100kcal:8.45, fat_per_100kcal:3.32, carbs_per_100kcal:11.71, fiber_per_100kcal:0.66},
+  {id:'rc_satiety_dog_dry', brand:'Royal Canin', name:'Satiety Weight Management', species:'Dog', form:'Dry',
+   indication:'Overweight / Obesity / Diabetes Mellitus',
+   energy_per_100g:262,
+   protein_per_100kcal:8.40, fat_per_100kcal:3.05, carbs_per_100kcal:11.45, fiber_per_100kcal:2.29},
+
+  // ROYAL CANIN (Feline)
+  {id:'rc_analler_dog_dry', brand:'Royal Canin', name:'Anallergenic', species:'Dog', form:'Dry',
+   indication:'Severe Adverse Food Reaction',
+   energy_per_100g:392,
+   protein_per_100kcal:4.60, fat_per_100kcal:4.21, carbs_per_100kcal:12.33, fiber_per_100kcal:1.53},
+  {id:'rc_analler_cat_dry', brand:'Royal Canin', name:'Anallergenic', species:'Cat', form:'Dry',
+   indication:'Severe Adverse Food Reaction',
+   energy_per_100g:394,
+   protein_per_100kcal:6.25, fat_per_100kcal:4.30, carbs_per_100kcal:10.74, fiber_per_100kcal:0.51},
+  {id:'rc_hypo_cat_dry', brand:'Royal Canin', name:'Hypoallergenic', species:'Cat', form:'Dry',
+   indication:'Adverse Food Reaction (Dermatological/GI)',
+   energy_per_100g:409,
+   protein_per_100kcal:6.24, fat_per_100kcal:4.89, carbs_per_100kcal:9.47, fiber_per_100kcal:0.51},
+  {id:'rc_skc_cat_dry', brand:'Royal Canin', name:'Skin & Coat', species:'Cat', form:'Dry',
+   indication:'Dermatosis / Hair Loss / Sensitive Skin',
+   energy_per_100g:384,
+   protein_per_100kcal:9.38, fat_per_100kcal:3.65, carbs_per_100kcal:8.57, fiber_per_100kcal:0.95},
+  {id:'rc_gi_cat_dry', brand:'Royal Canin', name:'Gastrointestinal', species:'Cat', form:'Dry',
+   indication:'Acute/Chronic Diarrhea / GI Disease',
+   energy_per_100g:410,
+   protein_per_100kcal:7.81, fat_per_100kcal:3.66, carbs_per_100kcal:null, fiber_per_100kcal:1.17},
+  {id:'rc_gi_cat_wet', brand:'Royal Canin', name:'Gastrointestinal', species:'Cat', form:'Wet',
+   indication:'Acute/Chronic Diarrhea / GI Disease',
+   energy_per_100g:96.6,
+   protein_per_100kcal:8.39, fat_per_100kcal:5.90, carbs_per_100kcal:4.45, fiber_per_100kcal:0.52},
+  {id:'rc_gihb_cat_dry', brand:'Royal Canin', name:'Gastrointestinal Hairball', species:'Cat', form:'Dry',
+   indication:'Hairball Management / GI Support',
+   energy_per_100g:390,
+   protein_per_100kcal:7.94, fat_per_100kcal:3.59, carbs_per_100kcal:null, fiber_per_100kcal:1.28},
+  {id:'rc_gimc_cat_dry', brand:'Royal Canin', name:'Gastrointestinal Moderate Calorie', species:'Cat', form:'Dry',
+   indication:'Overweight + GI Disease',
+   energy_per_100g:285,
+   protein_per_100kcal:11.03, fat_per_100kcal:3.16, carbs_per_100kcal:10.03, fiber_per_100kcal:2.11},
+  {id:'rc_neut37_cat_dry', brand:'Royal Canin', name:'Neutered 37', species:'Cat', form:'Dry',
+   indication:'Health Management Adult Neutered Cat',
+   energy_per_100g:348,
+   protein_per_100kcal:7.81, fat_per_100kcal:4.02, carbs_per_100kcal:10.00, fiber_per_100kcal:0.92},
+  {id:'rc_uro_cat_dry', brand:'Royal Canin', name:'Urinary S/O', species:'Cat', form:'Dry',
+   indication:'Struvite / Oxalate Urolithiasis / FIC',
+   energy_per_100g:388,
+   protein_per_100kcal:6.19, fat_per_100kcal:4.38, carbs_per_100kcal:10.31, fiber_per_100kcal:0.52},
+  {id:'rc_er_cat_dry', brand:'Royal Canin', name:'Early Renal', species:'Cat', form:'Dry',
+   indication:'Early CKD (IRIS Stage 1–early 2)',
+   energy_per_100g:381,
+   protein_per_100kcal:7.35, fat_per_100kcal:3.68, carbs_per_100kcal:10.98, fiber_per_100kcal:0.53},
+  {id:'rc_renal_cat_dry', brand:'Royal Canin', name:'Renal', species:'Cat', form:'Dry',
+   indication:'CKD (IRIS Stage 2–4)',
+   energy_per_100g:392,
+   protein_per_100kcal:5.87, fat_per_100kcal:4.34, carbs_per_100kcal:11.25, fiber_per_100kcal:0.46},
+  {id:'rc_renal_fish_cat_dry', brand:'Royal Canin', name:'Renal with Fish', species:'Cat', form:'Dry',
+   indication:'CKD (IRIS Stage 2–4) with Fish Flavour',
+   energy_per_100g:392,
+   protein_per_100kcal:5.87, fat_per_100kcal:4.34, carbs_per_100kcal:11.25, fiber_per_100kcal:0.46},
+  {id:'rc_diab_cat_dry', brand:'Royal Canin', name:'Diabetic', species:'Cat', form:'Dry',
+   indication:'Diabetes Mellitus',
+   energy_per_100g:380,
+   protein_per_100kcal:10.53, fat_per_100kcal:5.00, carbs_per_100kcal:3.42, fiber_per_100kcal:0.79},
+  {id:'rc_satiety_cat_dry', brand:'Royal Canin', name:'Satiety Weight Management', species:'Cat', form:'Dry',
+   indication:'Overweight / Obesity / Diabetes Mellitus',
+   energy_per_100g:293,
+   protein_per_100kcal:10.24, fat_per_100kcal:2.73, carbs_per_100kcal:9.56, fiber_per_100kcal:2.49},
+
+  // ── HILL'S PRESCRIPTION DIET ── (Canine)
+  {id:'hi_id_dry', brand:"Hill's", name:'i/d Gastrointestinal', species:'Dog', form:'Dry',
+   indication:'Acute/Chronic GI Disease / EPI / Constipation',
+   energy_per_100g:356,
+   protein_per_100kcal:6.7, fat_per_100kcal:3.5, carbs_per_100kcal:13.4, fiber_per_100kcal:0.5},
+  {id:'hi_id_sb_dry', brand:"Hill's", name:'i/d Small Bites', species:'Dog', form:'Dry',
+   indication:'Acute/Chronic GI Disease (Small Breed)',
+   energy_per_100g:376,
+   protein_per_100kcal:6.7, fat_per_100kcal:3.5, carbs_per_100kcal:13.4, fiber_per_100kcal:0.5},
+  {id:'hi_id_wet', brand:"Hill's", name:'i/d Gastrointestinal', species:'Dog', form:'Wet',
+   indication:'Acute/Chronic GI Disease / EPI',
+   energy_per_100g:78,
+   protein_per_100kcal:6.6, fat_per_100kcal:3.9, carbs_per_100kcal:12.2, fiber_per_100kcal:0.5},
+  {id:'hi_id_stress_dry', brand:"Hill's", name:'i/d Stress', species:'Dog', form:'Dry',
+   indication:'Stress-Related GI Disease / Acute Diarrhea',
+   energy_per_100g:300,
+   protein_per_100kcal:7.3, fat_per_100kcal:2.1, carbs_per_100kcal:16.2, fiber_per_100kcal:2.1},
+  {id:'hi_id_lf_dry', brand:"Hill's", name:'i/d Low Fat', species:'Dog', form:'Dry',
+   indication:'Pancreatitis / Hyperlipidemia / EPI',
+   energy_per_100g:300,
+   protein_per_100kcal:7.2, fat_per_100kcal:2.1, carbs_per_100kcal:16.3, fiber_per_100kcal:2.1},
+  {id:'hi_id_puppy_dry', brand:"Hill's", name:'i/d Puppy', species:'Dog', form:'Dry',
+   indication:'GI Disease in Puppies',
+   energy_per_100g:405,
+   protein_per_100kcal:7.2, fat_per_100kcal:4.8, carbs_per_100kcal:9.7, fiber_per_100kcal:0.5},
+  {id:'hi_cd_lf_dry', brand:"Hill's", name:'c/d Low Fat', species:'Dog', form:'Dry',
+   indication:'Struvite Urolithiasis (Low Fat)',
+   energy_per_100g:335,
+   protein_per_100kcal:6.0, fat_per_100kcal:2.0, carbs_per_100kcal:17.7, fiber_per_100kcal:1.5},
+  {id:'hi_cd_multi_dry', brand:"Hill's", name:'c/d Multicare', species:'Dog', form:'Dry',
+   indication:'Struvite / Oxalate Urolithiasis',
+   energy_per_100g:379,
+   protein_per_100kcal:5.4, fat_per_100kcal:4.1, carbs_per_100kcal:13.1, fiber_per_100kcal:0.5},
+  {id:'hi_ud_dry', brand:"Hill's", name:'u/d', species:'Dog', form:'Dry',
+   indication:'Urate / Oxalate / Cystine Urolithiasis / CKD',
+   energy_per_100g:429,
+   protein_per_100kcal:3.2, fat_per_100kcal:4.8, carbs_per_100kcal:13.8, fiber_per_100kcal:0.5},
+  {id:'hi_zd_lf_dry', brand:"Hill's", name:'z/d Low Fat', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction (Low Fat)',
+   energy_per_100g:317,
+   protein_per_100kcal:7.7, fat_per_100kcal:2.1, carbs_per_100kcal:15.8, fiber_per_100kcal:1.6},
+  {id:'hi_zd_dry', brand:"Hill's", name:'z/d Hydrolyzed', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction / Dermatological',
+   energy_per_100g:348,
+   protein_per_100kcal:5.3, fat_per_100kcal:3.8, carbs_per_100kcal:14.0, fiber_per_100kcal:0.8},
+  {id:'hi_dd_salmon_dry', brand:"Hill's", name:'d/d Salmon & Potato', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction / Novel Protein',
+   energy_per_100g:372,
+   protein_per_100kcal:4.7, fat_per_100kcal:4.0, carbs_per_100kcal:14.1, fiber_per_100kcal:0.8},
+  {id:'hi_dd_duck_dry', brand:"Hill's", name:'d/d Duck & Potato', species:'Dog', form:'Dry',
+   indication:'Adverse Food Reaction / Novel Protein',
+   energy_per_100g:373,
+   protein_per_100kcal:4.7, fat_per_100kcal:4.0, carbs_per_100kcal:14.1, fiber_per_100kcal:0.8},
+  {id:'hi_kd_dry', brand:"Hill's", name:'k/d Kidney Care', species:'Dog', form:'Dry',
+   indication:'CKD / Proteinuria',
+   energy_per_100g:419,
+   protein_per_100kcal:3.6, fat_per_100kcal:4.9, carbs_per_100kcal:13.2, fiber_per_100kcal:0.4},
+  {id:'hi_kd_wet', brand:"Hill's", name:'k/d Kidney Care', species:'Dog', form:'Wet',
+   indication:'CKD / Proteinuria',
+   energy_per_100g:99,
+   protein_per_100kcal:3.6, fat_per_100kcal:5.5, carbs_per_100kcal:11.7, fiber_per_100kcal:0.4},
+  {id:'hi_kdjd_dry', brand:"Hill's", name:'k/d + j/d', species:'Dog', form:'Dry',
+   indication:'CKD + Degenerative Joint Disease',
+   energy_per_100g:489,
+   protein_per_100kcal:3.7, fat_per_100kcal:5.4, carbs_per_100kcal:11.9, fiber_per_100kcal:0.5},
+  {id:'hi_metabolic_dry', brand:"Hill's", name:'Metabolic', species:'Dog', form:'Dry',
+   indication:'Overweight / Obesity Management',
+   energy_per_100g:257,
+   protein_per_100kcal:8.2, fat_per_100kcal:3.5, carbs_per_100kcal:11.9, fiber_per_100kcal:1.5},
+  {id:'hi_wd_dry', brand:"Hill's", name:'w/d Multi-Benefit', species:'Dog', form:'Dry',
+   indication:'Overweight / Diabetes / Constipation / Hyperlipidemia',
+   energy_per_100g:255,
+   protein_per_100kcal:6.1, fat_per_100kcal:3.8, carbs_per_100kcal:13.2, fiber_per_100kcal:2.2},
+  {id:'hi_rd_dry', brand:"Hill's", name:'r/d Weight Reduction', species:'Dog', form:'Dry',
+   indication:'Obesity / Weight Loss',
+   energy_per_100g:242,
+   protein_per_100kcal:10.6, fat_per_100kcal:2.7, carbs_per_100kcal:11.6, fiber_per_100kcal:2.2},
+  {id:'hi_onc_dog_dry', brand:"Hill's", name:'ONC Care', species:'Dog', form:'Dry',
+   indication:'Oncology / Cancer Cachexia',
+   energy_per_100g:483,
+   protein_per_100kcal:6.8, fat_per_100kcal:5.8, carbs_per_100kcal:7.6, fiber_per_100kcal:0.4},
+
+  // HILL'S PRESCRIPTION DIET (Feline)
+  {id:'hi_id_cat_dry', brand:"Hill's", name:'i/d Gastrointestinal', species:'Cat', form:'Dry',
+   indication:'Acute/Chronic GI Disease / EPI',
+   energy_per_100g:502,
+   protein_per_100kcal:8.9, fat_per_100kcal:4.8, carbs_per_100kcal:8.0, fiber_per_100kcal:0.5},
+  {id:'hi_id_cat_wet', brand:"Hill's", name:'i/d Gastrointestinal', species:'Cat', form:'Wet',
+   indication:'Acute/Chronic GI Disease / EPI',
+   energy_per_100g:110,
+   protein_per_100kcal:8.5, fat_per_100kcal:5.5, carbs_per_100kcal:6.7, fiber_per_100kcal:0.5},
+  {id:'hi_id_stress_cat_dry', brand:"Hill's", name:'i/d Stress', species:'Cat', form:'Dry',
+   indication:'Stress-Related GI Disease',
+   energy_per_100g:421,
+   protein_per_100kcal:9.2, fat_per_100kcal:4.2, carbs_per_100kcal:9.2, fiber_per_100kcal:0.8},
+  {id:'hi_cd_multi_cat_dry', brand:"Hill's", name:'c/d Multicare', species:'Cat', form:'Dry',
+   indication:'Struvite / Oxalate Urolithiasis / FIC',
+   energy_per_100g:349,
+   protein_per_100kcal:8.3, fat_per_100kcal:4.0, carbs_per_100kcal:10.6, fiber_per_100kcal:0.6},
+  {id:'hi_cd_multi_fish_cat_dry', brand:"Hill's", name:'c/d Multicare Ocean Fish', species:'Cat', form:'Dry',
+   indication:'Struvite / Oxalate Urolithiasis / FIC',
+   energy_per_100g:397,
+   protein_per_100kcal:8.3, fat_per_100kcal:4.2, carbs_per_100kcal:10.2, fiber_per_100kcal:0.6},
+  {id:'hi_cd_stress_cat_dry', brand:"Hill's", name:'c/d Multicare Stress', species:'Cat', form:'Dry',
+   indication:'FIC / Stress-Related FLUTD',
+   energy_per_100g:349,
+   protein_per_100kcal:8.3, fat_per_100kcal:4.0, carbs_per_100kcal:10.6, fiber_per_100kcal:0.6},
+  {id:'hi_cd_meta_cat_dry', brand:"Hill's", name:'c/d Multicare + Metabolic', species:'Cat', form:'Dry',
+   indication:'FIC / Urolithiasis + Overweight',
+   energy_per_100g:286,
+   protein_per_100kcal:11.3, fat_per_100kcal:3.5, carbs_per_100kcal:8.9, fiber_per_100kcal:0.9},
+  {id:'hi_dd_duck_cat_dry', brand:"Hill's", name:'d/d Duck & Green Pea', species:'Cat', form:'Dry',
+   indication:'Adverse Food Reaction / Novel Protein',
+   energy_per_100g:486,
+   protein_per_100kcal:8.2, fat_per_100kcal:5.0, carbs_per_100kcal:8.2, fiber_per_100kcal:0.5},
+  {id:'hi_dd_venison_cat_dry', brand:"Hill's", name:'d/d Venison & Green Pea', species:'Cat', form:'Dry',
+   indication:'Adverse Food Reaction / Novel Protein',
+   energy_per_100g:486,
+   protein_per_100kcal:8.2, fat_per_100kcal:5.0, carbs_per_100kcal:8.2, fiber_per_100kcal:0.5},
+  {id:'hi_zd_cat_dry', brand:"Hill's", name:'z/d Hydrolyzed', species:'Cat', form:'Dry',
+   indication:'Adverse Food Reaction / Dermatological',
+   energy_per_100g:469,
+   protein_per_100kcal:8.4, fat_per_100kcal:4.2, carbs_per_100kcal:10.0, fiber_per_100kcal:0.5},
+  {id:'hi_kd_cat_dry', brand:"Hill's", name:'k/d Kidney Care', species:'Cat', form:'Dry',
+   indication:'CKD (IRIS Stage 2–4)',
+   energy_per_100g:521,
+   protein_per_100kcal:6.6, fat_per_100kcal:5.3, carbs_per_100kcal:9.1, fiber_per_100kcal:0.4},
+  {id:'hi_kd_cat_wet', brand:"Hill's", name:'k/d Kidney Care', species:'Cat', form:'Wet',
+   indication:'CKD (IRIS Stage 2–4)',
+   energy_per_100g:112,
+   protein_per_100kcal:6.7, fat_per_100kcal:5.5, carbs_per_100kcal:8.5, fiber_per_100kcal:0.4},
+  {id:'hi_kd_es_cat_dry', brand:"Hill's", name:'k/d Early Support', species:'Cat', form:'Dry',
+   indication:'Early CKD (IRIS Stage 1–early 2)',
+   energy_per_100g:521,
+   protein_per_100kcal:7.9, fat_per_100kcal:5.0, carbs_per_100kcal:8.6, fiber_per_100kcal:0.5},
+  {id:'hi_kdjd_cat_dry', brand:"Hill's", name:'k/d + j/d', species:'Cat', form:'Dry',
+   indication:'CKD + Degenerative Joint Disease',
+   energy_per_100g:475,
+   protein_per_100kcal:6.7, fat_per_100kcal:4.9, carbs_per_100kcal:9.9, fiber_per_100kcal:0.5},
+  {id:'hi_ld_cat_dry', brand:"Hill's", name:'l/d Hepatic', species:'Cat', form:'Dry',
+   indication:'Hepatic Disease / Hepatic Encephalopathy',
+   energy_per_100g:424,
+   protein_per_100kcal:4.1, fat_per_100kcal:5.5, carbs_per_100kcal:11.2, fiber_per_100kcal:0.5},
+  {id:'hi_yd_cat_dry', brand:"Hill's", name:'y/d Thyroid Care', species:'Cat', form:'Dry',
+   indication:'Hyperthyroidism (Iodine Restriction)',
+   energy_per_100g:500,
+   protein_per_100kcal:8.3, fat_per_100kcal:5.2, carbs_per_100kcal:7.6, fiber_per_100kcal:0.4},
+  {id:'hi_md_cat_dry', brand:"Hill's", name:'m/d Glucose Management', species:'Cat', form:'Dry',
+   indication:'Diabetes Mellitus / Overweight',
+   energy_per_100g:463,
+   protein_per_100kcal:12.5, fat_per_100kcal:5.2, carbs_per_100kcal:3.6, fiber_per_100kcal:0.5},
+  {id:'hi_wd_cat_dry', brand:"Hill's", name:'w/d Multi-Benefit', species:'Cat', form:'Dry',
+   indication:'Overweight / Diabetes / Constipation / Hairball',
+   energy_per_100g:293,
+   protein_per_100kcal:11.6, fat_per_100kcal:2.7, carbs_per_100kcal:10.5, fiber_per_100kcal:1.6},
+  {id:'hi_rd_cat_dry', brand:"Hill's", name:'r/d Weight Reduction', species:'Cat', form:'Dry',
+   indication:'Obesity / Weight Loss',
+   energy_per_100g:268,
+   protein_per_100kcal:11.2, fat_per_100kcal:2.8, carbs_per_100kcal:10.6, fiber_per_100kcal:1.4},
+  {id:'hi_metabolic_cat_dry', brand:"Hill's", name:'Metabolic', species:'Cat', form:'Dry',
+   indication:'Overweight / Obesity Management',
+   energy_per_100g:299,
+   protein_per_100kcal:10.7, fat_per_100kcal:3.7, carbs_per_100kcal:8.8, fiber_per_100kcal:1.0},
+  {id:'hi_onc_cat_dry', brand:"Hill's", name:'ONC Care', species:'Cat', form:'Dry',
+   indication:'Oncology / Cancer Cachexia',
+   energy_per_100g:581,
+   protein_per_100kcal:9.0, fat_per_100kcal:5.6, carbs_per_100kcal:5.9, fiber_per_100kcal:0.5},
+  {id:'hi_td_cat_dry', brand:"Hill's", name:'t/d Dental', species:'Cat', form:'Dry',
+   indication:'Tartar / Dental Plaque Control',
+   energy_per_100g:269,
+   protein_per_100kcal:9.1, fat_per_100kcal:4.4, carbs_per_100kcal:8.6, fiber_per_100kcal:0.7},
+  {id:'hi_hd_cat_dry', brand:"Hill's", name:'h/d Cardiac', species:'Cat', form:'Dry',
+   indication:'Cardiovascular Disease / Heart Failure',
+   energy_per_100g:420,
+   protein_per_100kcal:4.5, fat_per_100kcal:4.9, carbs_per_100kcal:12.2, fiber_per_100kcal:0.5},
+
+// ─── HILL'S WET FOODS ─────────────────────────────────────────────────────
+  {id:'hi_id_gi_dog_wet1', brand:"Hill's", name:'i/d Gastrointestinal - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:78,
+   protein_per_100kcal:6.6, fat_per_100kcal:3.9, carbs_per_100kcal:12.2, fiber_per_100kcal:0.5},
+  {id:'hi_id_gi_dog_wet2', brand:"Hill's", name:'i/d Gastrointestinal - Chicken & Carrots Stew Pouch', species:'Dog', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:76,
+   protein_per_100kcal:6.7, fat_per_100kcal:3.7, carbs_per_100kcal:12.9, fiber_per_100kcal:0.5},
+  {id:'hi_id_gi_dog_wet3', brand:"Hill's", name:'i/d Gastrointestinal - Turkey Loaf', species:'Dog', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:102,
+   protein_per_100kcal:6.8, fat_per_100kcal:3.8, carbs_per_100kcal:12.7, fiber_per_100kcal:0.4},
+  {id:'hi_id_biome_dog_wet1', brand:"Hill's", name:'i/d GI Biome - Chicken & Carrots Stew Pouch', species:'Dog', form:'Wet',
+   indication:'Gastrointestinal Disease / Microbiome',
+   energy_per_100g:81,
+   protein_per_100kcal:6.6, fat_per_100kcal:3.8, carbs_per_100kcal:12.7, fiber_per_100kcal:1.9},
+  {id:'hi_id_biome_dog_wet2', brand:"Hill's", name:'i/d GI Biome - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Gastrointestinal Disease / Microbiome',
+   energy_per_100g:81,
+   protein_per_100kcal:6.6, fat_per_100kcal:4.0, carbs_per_100kcal:12.1, fiber_per_100kcal:1.9},
+  {id:'hi_id_stress_dog_wet1', brand:"Hill's", name:'i/d Stress - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Stress-Related GI Disease',
+   energy_per_100g:79,
+   protein_per_100kcal:6.4, fat_per_100kcal:2.4, carbs_per_100kcal:16.3, fiber_per_100kcal:0.5},
+  {id:'hi_id_puppy_dog_wet1', brand:"Hill's", name:'i/d Puppy - Turkey Loaf', species:'Dog', form:'Wet',
+   indication:'GI Disease (Puppy)',
+   energy_per_100g:108,
+   protein_per_100kcal:7.4, fat_per_100kcal:4.4, carbs_per_100kcal:10.5, fiber_per_100kcal:0.3},
+  {id:'hi_id_lf_dog_wet1', brand:"Hill's", name:'i/d Low Fat - Chicken & Carrots Stew Pouch', species:'Dog', form:'Wet',
+   indication:'GI Disease / Pancreatitis / Hyperlipidemia',
+   energy_per_100g:78,
+   protein_per_100kcal:7.2, fat_per_100kcal:2.3, carbs_per_100kcal:15.9, fiber_per_100kcal:0.6},
+  {id:'hi_id_lf_dog_wet2', brand:"Hill's", name:'i/d Low Fat - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'GI Disease / Pancreatitis / Hyperlipidemia',
+   energy_per_100g:79,
+   protein_per_100kcal:6.3, fat_per_100kcal:2.5, carbs_per_100kcal:16.3, fiber_per_100kcal:0.5},
+  {id:'hi_id_orig_dog_wet1', brand:"Hill's", name:'i/d Gastrointestinal - Original Loaf', species:'Dog', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:89,
+   protein_per_100kcal:6.8, fat_per_100kcal:2.2, carbs_per_100kcal:16.5, fiber_per_100kcal:0.8},
+  {id:'hi_cd_lf_dog_wet1', brand:"Hill's", name:'c/d Low Fat - Turkey & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'GI Disease / Urinary',
+   energy_per_100g:78,
+   protein_per_100kcal:6.5, fat_per_100kcal:2.3, carbs_per_100kcal:16.4, fiber_per_100kcal:1.1},
+  {id:'hi_ud_dog_wet1', brand:"Hill's", name:'u/d Non-Struvite / Non-Calcium Oxalate - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Urinary Stones (Non-Struvite / Non-Ca Oxalate)',
+   energy_per_100g:138,
+   protein_per_100kcal:3.0, fat_per_100kcal:5.7, carbs_per_100kcal:11.6, fiber_per_100kcal:0.5},
+  {id:'hi_cd_mc_dog_wet1', brand:"Hill's", name:'c/d Multicare Urinary - Chicken & Vegetable Stew Pouch', species:'Dog', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:77,
+   protein_per_100kcal:5.7, fat_per_100kcal:4.5, carbs_per_100kcal:11.9, fiber_per_100kcal:1.2},
+  {id:'hi_cd_mc_dog_wet2', brand:"Hill's", name:'c/d Multicare Urinary - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:75,
+   protein_per_100kcal:5.7, fat_per_100kcal:4.6, carbs_per_100kcal:12.1, fiber_per_100kcal:1.3},
+  {id:'hi_cd_mc_dog_wet3', brand:"Hill's", name:'c/d Multicare Urinary - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:122,
+   protein_per_100kcal:6.0, fat_per_100kcal:4.1, carbs_per_100kcal:12.5, fiber_per_100kcal:0.8},
+  {id:'hi_zd_dog_wet1', brand:"Hill's", name:'z/d Hydrolyzed - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:97,
+   protein_per_100kcal:5.4, fat_per_100kcal:4.1, carbs_per_100kcal:13.3, fiber_per_100kcal:1.2},
+  {id:'hi_derm_dog_wet1', brand:"Hill's", name:'Derm Complete - Rice & Egg Loaf', species:'Dog', form:'Wet',
+   indication:'Environmental + Food Allergies',
+   energy_per_100g:122,
+   protein_per_100kcal:4.9, fat_per_100kcal:4.1, carbs_per_100kcal:13.8, fiber_per_100kcal:0.3},
+  {id:'hi_dd_duck_dog_wet1', brand:"Hill's", name:'d/d Skin & Food Sensitivities - Duck Loaf', species:'Dog', form:'Wet',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:105,
+   protein_per_100kcal:4.3, fat_per_100kcal:4.1, carbs_per_100kcal:14.3, fiber_per_100kcal:0.7},
+  {id:'hi_dd_ven_dog_wet1', brand:"Hill's", name:'d/d Skin & Food Sensitivities - Venison & Potato Loaf', species:'Dog', form:'Wet',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:106,
+   protein_per_100kcal:4.9, fat_per_100kcal:4.1, carbs_per_100kcal:13.8, fiber_per_100kcal:0.7},
+  {id:'hi_dd_salmon_dog_wet1', brand:"Hill's", name:'d/d Skin & Food Sensitivities - Salmon Loaf', species:'Dog', form:'Wet',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:110,
+   protein_per_100kcal:4.7, fat_per_100kcal:4.0, carbs_per_100kcal:14.1, fiber_per_100kcal:0.5},
+  {id:'hi_zd_lf_dog_wet1', brand:"Hill's", name:'z/d Low Fat Hydrolyzed - Soy Loaf', species:'Dog', form:'Wet',
+   indication:'Adverse Food Reaction / Pancreatitis',
+   energy_per_100g:93,
+   protein_per_100kcal:8.1, fat_per_100kcal:2.5, carbs_per_100kcal:14.3, fiber_per_100kcal:0.4},
+  {id:'hi_kd_jd_dog_wet1', brand:"Hill's", name:'k/d + j/d Kidney+Joint Care - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Renal Disease / Osteoarthritis',
+   energy_per_100g:99,
+   protein_per_100kcal:3.5, fat_per_100kcal:5.5, carbs_per_100kcal:11.7, fiber_per_100kcal:0.9},
+  {id:'hi_kd_derm_dog_wet1', brand:"Hill's", name:'k/d + Derm Complete - Rice & Egg Loaf', species:'Dog', form:'Wet',
+   indication:'Renal Disease / Adverse Food Reaction',
+   energy_per_100g:101,
+   protein_per_100kcal:3.5, fat_per_100kcal:5.7, carbs_per_100kcal:11.3, fiber_per_100kcal:0.2},
+  {id:'hi_kd_dog_wet1', brand:"Hill's", name:'k/d Kidney Care - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:99,
+   protein_per_100kcal:3.6, fat_per_100kcal:5.5, carbs_per_100kcal:11.7, fiber_per_100kcal:0.7},
+  {id:'hi_kd_dog_wet2', brand:"Hill's", name:'k/d Kidney Care - Beef & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:99,
+   protein_per_100kcal:3.6, fat_per_100kcal:5.4, carbs_per_100kcal:11.9, fiber_per_100kcal:0.8},
+  {id:'hi_kd_dog_wet3', brand:"Hill's", name:'k/d Kidney Care - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:99,
+   protein_per_100kcal:3.5, fat_per_100kcal:5.8, carbs_per_100kcal:11.0, fiber_per_100kcal:0.8},
+  {id:'hi_kd_dog_wet4', brand:"Hill's", name:'k/d Kidney Care - Lamb Loaf', species:'Dog', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:120,
+   protein_per_100kcal:3.4, fat_per_100kcal:5.8, carbs_per_100kcal:11.1, fiber_per_100kcal:0.8},
+  {id:'hi_met_dog_wet1', brand:"Hill's", name:'Metabolic Weight Management - Chicken & Vegetable Stew Pouch', species:'Dog', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:71,
+   protein_per_100kcal:8.5, fat_per_100kcal:3.3, carbs_per_100kcal:12.0, fiber_per_100kcal:3.5},
+  {id:'hi_met_dog_wet2', brand:"Hill's", name:'Metabolic Weight Management - Beef & Vegetable Stew Pouch', species:'Dog', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:74,
+   protein_per_100kcal:8.5, fat_per_100kcal:3.7, carbs_per_100kcal:11.2, fiber_per_100kcal:3.7},
+  {id:'hi_met_dog_wet3', brand:"Hill's", name:'Metabolic Weight Management - Beef & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:74,
+   protein_per_100kcal:8.5, fat_per_100kcal:3.6, carbs_per_100kcal:11.1, fiber_per_100kcal:3.7},
+  {id:'hi_met_dog_wet4', brand:"Hill's", name:'Metabolic Weight Management - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:70,
+   protein_per_100kcal:8.3, fat_per_100kcal:3.3, carbs_per_100kcal:12.0, fiber_per_100kcal:3.3},
+  {id:'hi_met_dog_wet5', brand:"Hill's", name:'Metabolic Weight Management - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:89,
+   protein_per_100kcal:8.1, fat_per_100kcal:3.8, carbs_per_100kcal:11.4, fiber_per_100kcal:4.3},
+  {id:'hi_wd_dog_wet1', brand:"Hill's", name:'w/d Multi-Benefit - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Glucose / Weight Management',
+   energy_per_100g:57,
+   protein_per_100kcal:6.4, fat_per_100kcal:3.1, carbs_per_100kcal:14.6, fiber_per_100kcal:4.4},
+  {id:'hi_wd_dog_wet2', brand:"Hill's", name:'w/d Multi-Benefit - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Glucose / Weight Management',
+   energy_per_100g:83,
+   protein_per_100kcal:5.7, fat_per_100kcal:3.3, carbs_per_100kcal:14.8, fiber_per_100kcal:4.0},
+  {id:'hi_rd_dog_wet1', brand:"Hill's", name:'r/d Healthy Weight - Chicken Loaf', species:'Dog', form:'Wet',
+   indication:'Obesity / Weight Reduction',
+   energy_per_100g:86,
+   protein_per_100kcal:10.1, fat_per_100kcal:2.6, carbs_per_100kcal:12.1, fiber_per_100kcal:3.8},
+  {id:'hi_met_jd_dog_wet1', brand:"Hill's", name:'Metabolic + j/d Weight & Joint Care - Tuna & Carrots Stew Pouch', species:'Dog', form:'Wet',
+   indication:'Obesity / Osteoarthritis',
+   energy_per_100g:64,
+   protein_per_100kcal:8.1, fat_per_100kcal:4.3, carbs_per_100kcal:10.0, fiber_per_100kcal:4.7},
+  {id:'hi_met_jd_dog_wet2', brand:"Hill's", name:'Metabolic + j/d Weight & Joint Care - Tuna & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Obesity / Osteoarthritis',
+   energy_per_100g:64,
+   protein_per_100kcal:8.2, fat_per_100kcal:4.4, carbs_per_100kcal:9.7, fiber_per_100kcal:4.7},
+  {id:'hi_onc_dog_wet1', brand:"Hill's", name:'ONC Care - Chicken & Vegetable Stew', species:'Dog', form:'Wet',
+   indication:'Oncology / Cancer Support',
+   energy_per_100g:91,
+   protein_per_100kcal:7.3, fat_per_100kcal:5.5, carbs_per_100kcal:8.0, fiber_per_100kcal:0.5},
+  {id:'hi_ld_cat_wet1', brand:"Hill's", name:'l/d Liver Care - Chicken Loaf', species:'Cat', form:'Wet',
+   indication:'Hepatic Disease',
+   energy_per_100g:153,
+   protein_per_100kcal:4.4, fat_per_100kcal:5.4, carbs_per_100kcal:11.2, fiber_per_100kcal:0.7},
+  {id:'hi_jd_cat_wet1', brand:"Hill's", name:'j/d Joint Care - Lamb Loaf', species:'Cat', form:'Wet',
+   indication:'Osteoarthritis',
+   energy_per_100g:128,
+   protein_per_100kcal:4.8, fat_per_100kcal:4.4, carbs_per_100kcal:13.2, fiber_per_100kcal:1.0},
+  {id:'hi_brain_jd_cat_wet1', brand:"Hill's", name:'Brain Care + j/d - Turkey & Rice Loaf', species:'Cat', form:'Wet',
+   indication:'Cognitive Support / Osteoarthritis',
+   energy_per_100g:100,
+   protein_per_100kcal:5.7, fat_per_100kcal:4.0, carbs_per_100kcal:13.1, fiber_per_100kcal:0.8},
+  {id:'hi_ad_cat_wet1', brand:"Hill's", name:'a/d Critical Care - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Recovery / Critical Illness',
+   energy_per_100g:126,
+   protein_per_100kcal:9.4, fat_per_100kcal:6.6, carbs_per_100kcal:3.2, fiber_per_100kcal:0.0},
+  {id:'hi_mo_cat_wet1', brand:"Hill's", name:'Multi-Organ - Turkey & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Multi-Organ Support',
+   energy_per_100g:77,
+   protein_per_100kcal:5.1, fat_per_100kcal:3.2, carbs_per_100kcal:15.7, fiber_per_100kcal:1.1},
+  {id:'hi_id_kitten_cat_wet1', brand:"Hill's", name:'i/d Kitten - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'GI Disease (Kitten)',
+   energy_per_100g:111,
+   protein_per_100kcal:8.9, fat_per_100kcal:5.4, carbs_per_100kcal:6.7, fiber_per_100kcal:0.4},
+  {id:'hi_id_gi_cat_wet1', brand:"Hill's", name:'i/d Gastrointestinal - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:89,
+   protein_per_100kcal:9.0, fat_per_100kcal:5.5, carbs_per_100kcal:6.3, fiber_per_100kcal:0.4},
+  {id:'hi_id_gi_cat_wet2', brand:"Hill's", name:'i/d Gastrointestinal - Chicken & Carrots Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:91,
+   protein_per_100kcal:9.1, fat_per_100kcal:5.4, carbs_per_100kcal:6.4, fiber_per_100kcal:0.4},
+  {id:'hi_id_gi_cat_wet3', brand:"Hill's", name:'i/d Gastrointestinal - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Gastrointestinal Disease',
+   energy_per_100g:110,
+   protein_per_100kcal:8.5, fat_per_100kcal:5.5, carbs_per_100kcal:6.7, fiber_per_100kcal:0.4},
+  {id:'hi_id_biome_stress_cat_wet1', brand:"Hill's", name:'i/d GI Biome Stress - Chicken & Carrots Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Stress-Related GI / Microbiome',
+   energy_per_100g:82,
+   protein_per_100kcal:9.4, fat_per_100kcal:4.7, carbs_per_100kcal:7.8, fiber_per_100kcal:1.2},
+  {id:'hi_id_biome_stress_cat_wet2', brand:"Hill's", name:'i/d GI Biome Stress - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Stress-Related GI / Microbiome',
+   energy_per_100g:83,
+   protein_per_100kcal:9.3, fat_per_100kcal:4.7, carbs_per_100kcal:7.9, fiber_per_100kcal:1.2},
+  {id:'hi_cd_stress_cat_wet1', brand:"Hill's", name:'c/d Multicare Stress - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Urinary Stress / Struvite / Ca Oxalate',
+   energy_per_100g:84,
+   protein_per_100kcal:9.9, fat_per_100kcal:4.5, carbs_per_100kcal:7.8, fiber_per_100kcal:0.2},
+  {id:'hi_cd_stress_cat_wet2', brand:"Hill's", name:'c/d Multicare Stress - Tuna & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Urinary Stress / Struvite / Ca Oxalate',
+   energy_per_100g:80,
+   protein_per_100kcal:10.3, fat_per_100kcal:4.2, carbs_per_100kcal:8.1, fiber_per_100kcal:0.2},
+  {id:'hi_cd_mc_cat_wet1', brand:"Hill's", name:'c/d Multicare Urinary - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:112,
+   protein_per_100kcal:9.5, fat_per_100kcal:5.0, carbs_per_100kcal:6.8, fiber_per_100kcal:0.2},
+  {id:'hi_cd_mc_cat_wet2', brand:"Hill's", name:'c/d Multicare Urinary - Tuna Pâté', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:112,
+   protein_per_100kcal:10.4, fat_per_100kcal:4.8, carbs_per_100kcal:6.4, fiber_per_100kcal:1.0},
+  {id:'hi_cd_met_cat_wet1', brand:"Hill's", name:'c/d Multicare + Metabolic - Chicken & Tuna Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Urinary / Weight Management',
+   energy_per_100g:77,
+   protein_per_100kcal:10.5, fat_per_100kcal:3.9, carbs_per_100kcal:8.5, fiber_per_100kcal:3.0},
+  {id:'hi_cd_met_cat_wet2', brand:"Hill's", name:'c/d Multicare + Metabolic - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Urinary / Weight Management',
+   energy_per_100g:75,
+   protein_per_100kcal:10.5, fat_per_100kcal:4.0, carbs_per_100kcal:8.4, fiber_per_100kcal:3.0},
+  {id:'hi_cd_mc_cat_wet3', brand:"Hill's", name:'c/d Multicare Urinary - Tuna & Carrots Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:82,
+   protein_per_100kcal:10.3, fat_per_100kcal:4.2, carbs_per_100kcal:8.1, fiber_per_100kcal:0.1},
+  {id:'hi_cd_mc_cat_wet4', brand:"Hill's", name:'c/d Multicare Urinary - Chicken & Vegetable Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:91,
+   protein_per_100kcal:9.7, fat_per_100kcal:4.7, carbs_per_100kcal:7.6, fiber_per_100kcal:0.1},
+  {id:'hi_cd_mc_cat_wet5', brand:"Hill's", name:'c/d Multicare Urinary - Tuna & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:82,
+   protein_per_100kcal:10.2, fat_per_100kcal:4.4, carbs_per_100kcal:7.9, fiber_per_100kcal:0.2},
+  {id:'hi_cd_mc_cat_wet6', brand:"Hill's", name:'c/d Multicare Urinary - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:84,
+   protein_per_100kcal:9.8, fat_per_100kcal:4.5, carbs_per_100kcal:7.9, fiber_per_100kcal:0.2},
+  {id:'hi_cd_mc_cat_wet7', brand:"Hill's", name:'c/d Multicare Urinary - Ocean Fish Pâté', species:'Cat', form:'Wet',
+   indication:'Urinary Struvite / Calcium Oxalate',
+   energy_per_100g:114,
+   protein_per_100kcal:9.5, fat_per_100kcal:4.4, carbs_per_100kcal:5.9, fiber_per_100kcal:0.9},
+  {id:'hi_cd_stress_cat_wet3', brand:"Hill's", name:'c/d Multicare Stress - Chicken & Vegetable Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Urinary Stress / Struvite / Ca Oxalate',
+   energy_per_100g:91,
+   protein_per_100kcal:9.7, fat_per_100kcal:4.6, carbs_per_100kcal:7.6, fiber_per_100kcal:0.1},
+  {id:'hi_cd_stress_cat_wet4', brand:"Hill's", name:'c/d Multicare Stress - Tuna & Vegetable Stew Pouch', species:'Cat', form:'Wet',
+   indication:'Urinary Stress / Struvite / Ca Oxalate',
+   energy_per_100g:82,
+   protein_per_100kcal:10.3, fat_per_100kcal:4.2, carbs_per_100kcal:8.1, fiber_per_100kcal:0.1},
+  {id:'hi_dd_duck_cat_wet1', brand:"Hill's", name:'d/d Skin & Food Sensitivities - Duck Pâté', species:'Cat', form:'Wet',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:114,
+   protein_per_100kcal:8.6, fat_per_100kcal:6.4, carbs_per_100kcal:4.5, fiber_per_100kcal:1.6},
+  {id:'hi_zd_cat_wet1', brand:"Hill's", name:'z/d Hydrolyzed - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Adverse Food Reaction',
+   energy_per_100g:111,
+   protein_per_100kcal:8.4, fat_per_100kcal:4.6, carbs_per_100kcal:9.1, fiber_per_100kcal:0.5},
+  {id:'hi_kd_jd_cat_wet1', brand:"Hill's", name:'k/d + j/d Kidney+Joint Care - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Renal Disease / Osteoarthritis',
+   energy_per_100g:83,
+   protein_per_100kcal:6.8, fat_per_100kcal:5.5, carbs_per_100kcal:8.5, fiber_per_100kcal:0.7},
+  {id:'hi_kd_early_cat_wet1', brand:"Hill's", name:'k/d Early Support - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Early Chronic Kidney Disease',
+   energy_per_100g:110,
+   protein_per_100kcal:7.9, fat_per_100kcal:5.2, carbs_per_100kcal:8.0, fiber_per_100kcal:0.5},
+  {id:'hi_kd_zd_cat_wet1', brand:"Hill's", name:'k/d + z/d - Hydrolyzed Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Renal Disease / Adverse Food Reaction',
+   energy_per_100g:117,
+   protein_per_100kcal:6.6, fat_per_100kcal:5.3, carbs_per_100kcal:9.1, fiber_per_100kcal:0.8},
+  {id:'hi_kd_cat_wet1', brand:"Hill's", name:'k/d Kidney Care - Tuna & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:95,
+   protein_per_100kcal:6.7, fat_per_100kcal:5.5, carbs_per_100kcal:8.5, fiber_per_100kcal:0.8},
+  {id:'hi_kd_cat_wet2', brand:"Hill's", name:'k/d Kidney Care - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:86,
+   protein_per_100kcal:6.7, fat_per_100kcal:5.5, carbs_per_100kcal:8.5, fiber_per_100kcal:0.7},
+  {id:'hi_kd_cat_wet3', brand:"Hill's", name:'k/d Kidney Care - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:112,
+   protein_per_100kcal:6.7, fat_per_100kcal:5.1, carbs_per_100kcal:9.4, fiber_per_100kcal:0.6},
+  {id:'hi_kd_cat_wet4', brand:"Hill's", name:'k/d Kidney Care - Tuna Pâté', species:'Cat', form:'Wet',
+   indication:'Chronic Kidney Disease',
+   energy_per_100g:117,
+   protein_per_100kcal:6.6, fat_per_100kcal:5.1, carbs_per_100kcal:9.6, fiber_per_100kcal:0.3},
+  {id:'hi_wd_cat_wet1', brand:"Hill's", name:'w/d Multi-Benefit - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Glucose / Weight Management',
+   energy_per_100g:82,
+   protein_per_100kcal:11.4, fat_per_100kcal:4.0, carbs_per_100kcal:7.6, fiber_per_100kcal:4.0},
+  {id:'hi_rd_cat_wet1', brand:"Hill's", name:'r/d Healthy Weight - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Obesity / Weight Reduction',
+   energy_per_100g:78,
+   protein_per_100kcal:11.1, fat_per_100kcal:3.6, carbs_per_100kcal:8.7, fiber_per_100kcal:4.9},
+  {id:'hi_md_stew_cat_wet1', brand:"Hill's", name:'m/d Glucose/Weight - Chicken & Liver Stew', species:'Cat', form:'Wet',
+   indication:'Diabetes / Weight Management',
+   energy_per_100g:95,
+   protein_per_100kcal:11.8, fat_per_100kcal:5.7, carbs_per_100kcal:3.6, fiber_per_100kcal:0.2},
+  {id:'hi_md_pate_cat_wet1', brand:"Hill's", name:'m/d Glucose/Weight - Liver Pâté', species:'Cat', form:'Wet',
+   indication:'Diabetes / Weight Management',
+   energy_per_100g:111,
+   protein_per_100kcal:11.9, fat_per_100kcal:5.7, carbs_per_100kcal:3.0, fiber_per_100kcal:0.6},
+  {id:'hi_met_jd_cat_wet1', brand:"Hill's", name:'Metabolic + j/d Weight & Joint Care - Tuna & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Obesity / Osteoarthritis',
+   energy_per_100g:80,
+   protein_per_100kcal:11.3, fat_per_100kcal:3.4, carbs_per_100kcal:8.9, fiber_per_100kcal:2.2},
+  {id:'hi_met_cat_wet1', brand:"Hill's", name:'Metabolic Weight Management - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:78,
+   protein_per_100kcal:10.7, fat_per_100kcal:3.7, carbs_per_100kcal:8.8, fiber_per_100kcal:2.6},
+  {id:'hi_met_cat_wet2', brand:"Hill's", name:'Metabolic Weight Management - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Obesity / Overweight',
+   energy_per_100g:87,
+   protein_per_100kcal:10.7, fat_per_100kcal:3.9, carbs_per_100kcal:8.6, fiber_per_100kcal:2.9},
+  {id:'hi_onc_cat_wet1', brand:"Hill's", name:'ONC Care - Chicken & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Oncology / Cancer Support',
+   energy_per_100g:94,
+   protein_per_100kcal:9.5, fat_per_100kcal:5.6, carbs_per_100kcal:5.5, fiber_per_100kcal:0.4},
+  {id:'hi_yd_cat_wet1', brand:"Hill's", name:'y/d Thyroid Care - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Hyperthyroidism',
+   energy_per_100g:124,
+   protein_per_100kcal:7.3, fat_per_100kcal:5.9, carbs_per_100kcal:6.8, fiber_per_100kcal:0.7},
+  {id:'hi_mo_cat_wet2', brand:"Hill's", name:'Multi-Organ - Chicken Pâté', species:'Cat', form:'Wet',
+   indication:'Multi-Organ Support',
+   energy_per_100g:110,
+   protein_per_100kcal:9.7, fat_per_100kcal:6.2, carbs_per_100kcal:3.8, fiber_per_100kcal:1.8},
+  {id:'hi_brain_jd_cat_wet2', brand:"Hill's", name:'Brain Care + j/d - Tuna & Vegetable Stew', species:'Cat', form:'Wet',
+   indication:'Cognitive Support / Osteoarthritis',
+   energy_per_100g:80,
+   protein_per_100kcal:9.6, fat_per_100kcal:4.0, carbs_per_100kcal:9.1, fiber_per_100kcal:0.2},
+
+];
+
+// Compute per100g from per100kcal × energy/100
+FOODS.forEach(f=>{
+  ['protein','fat','carbs','fiber'].forEach(n=>{
+    const key = n+'_per_100g';
+    const kkcal = n+'_per_100kcal';
+    if(f.energy_per_100g && f[kkcal]!=null){
+      f[key] = parseFloat((f[kkcal] * f.energy_per_100g / 100).toFixed(2));
+    } else {
+      f[key] = null;
+    }
+  });
+});
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let filterBrand='all', filterSpecies='all', filterForm='all';
+let selectedIds = new Set();
+let currentMetric = '100kcal';
+let currentView = 'card';
+let charts = {};
+
+// ─── FILTERS ─────────────────────────────────────────────────────────────────
+function setBrand(v,el){
+  filterBrand=v;
+  document.querySelectorAll('#brandPills .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); renderCards();
+}
+function setSpecies(v,el){
+  filterSpecies=v;
+  document.querySelectorAll('#speciesPills .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); renderCards();
+}
+function setForm(v,el){
+  filterForm=v;
+  document.querySelectorAll('#formPills .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); renderCards();
+}
+function setMetric(v,el){
+  currentMetric=v;
+  document.querySelectorAll('.mode-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); renderCards(); renderCompare();
+}
+function setView(v,el){
+  currentView=v;
+  document.querySelectorAll('.view-toggle .btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('cardView').style.display = v==='card'?'':'none';
+  document.getElementById('compareView').style.display = v==='compare'?'':'none';
+  if(v==='compare') renderCompare();
+}
+
+function getFiltered(){
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  return FOODS.filter(f=>{
+    if(filterBrand!=='all' && f.brand!==filterBrand) return false;
+    if(filterSpecies!=='all' && f.species!==filterSpecies) return false;
+    if(filterForm!=='all' && f.form!==filterForm) return false;
+    if(q && !f.name.toLowerCase().includes(q) && !f.indication.toLowerCase().includes(q) && !f.brand.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function getVal(f, nutrient){
+  return currentMetric==='100kcal' ? f[nutrient+'_per_100kcal'] : f[nutrient+'_per_100g'];
+}
+function getUnit(){ return currentMetric==='100kcal' ? 'g/100kcal' : 'g/100g'; }
+
+// ─── CARDS ───────────────────────────────────────────────────────────────────
+const MAX_ENERGY=600;
+function renderCards(){
+  const foods=getFiltered();
+  const grid=document.getElementById('cardGrid');
+  document.getElementById('selCount').textContent=selectedIds.size+' selected';
+  if(!foods.length){
+    grid.innerHTML='<div class="empty"><svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>ไม่พบข้อมูลที่ตรงกัน</p></div>';
+    return;
+  }
+  grid.innerHTML=foods.map(f=>{
+    const tagClass = f.brand==='Purina'?'tag-purina':f.brand==='Royal Canin'?'tag-rc':'tag-hills';
+    const brandShort = f.brand==='Purina'?'Purina':f.brand==='Royal Canin'?'RC':"Hill's";
+    const sel=selectedIds.has(f.id);
+    const energyW = f.energy_per_100g? Math.min(100,f.energy_per_100g/MAX_ENERGY*100):0;
+    const p=getVal(f,'protein'), fa=getVal(f,'fat'), c=getVal(f,'carbs'), fi=getVal(f,'fiber');
+    const fmtBadge=`<span class="form-badge form-${f.form.toLowerCase()}">${f.form}</span>`;
+    return `<div class="card${sel?' selected':''}" onclick="toggleCard('${f.id}')">
+      <div class="check-badge">✓</div>
+      <div class="card-header">
+        <div class="card-name">${f.name}${fmtBadge}</div>
+        <span class="tag ${tagClass}">${brandShort}</span>
+      </div>
+      <div class="indication">${f.species} · ${f.indication}</div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">🥩 Protein</div>
+          <div class="metric-val">${p!=null?p.toFixed(1):'—'}</div>
+          <div class="metric-unit">${getUnit()}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">🧈 Fat</div>
+          <div class="metric-val">${fa!=null?fa.toFixed(1):'—'}</div>
+          <div class="metric-unit">${getUnit()}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">🌾 Carbs</div>
+          <div class="metric-val">${c!=null?c.toFixed(1):'—'}</div>
+          <div class="metric-unit">${getUnit()}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">⚡ Energy</div>
+          <div class="metric-val">${f.energy_per_100g!=null?f.energy_per_100g:'—'}</div>
+          <div class="metric-unit">kcal/100g</div>
+        </div>
+      </div>
+      <div class="energy-bar-wrap">
+        <div class="energy-bar-label">
+          <span>Calorie Density</span>
+          <span>${f.energy_per_100g!=null?f.energy_per_100g+' kcal/100g':'N/A'}</span>
+        </div>
+        <div class="energy-bar"><div class="energy-bar-fill" style="width:${energyW}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(id){
+  if(selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  renderCards();
+  if(currentView==='compare') renderCompare();
+}
+
+function clearSelection(){selectedIds.clear();renderCards();if(currentView==='compare')renderCompare();}
+
+// ─── COMPARE TABLE ────────────────────────────────────────────────────────────
+function renderCompare(){
+  const sel=FOODS.filter(f=>selectedIds.has(f.id));
+  const tbl=document.getElementById('cmpTable');
+  if(!sel.length){
+    tbl.innerHTML='<tr><td colspan="2" class="empty" style="padding:40px;color:#a0aec0;text-align:center">Select cards to compare</td></tr>';
+    destroyCharts(); return;
+  }
+  const unit=getUnit();
+  const rows=[
+    {label:'Brand', key:'brand', isText:true},
+    {label:'Species', key:'species', isText:true},
+    {label:'Form', key:'form', isText:true},
+    {label:'Indication', key:'indication', isText:true},
+    {label:`Protein (${unit})`, key:'protein', color:'#4299e1', max:20},
+    {label:`Fat (${unit})`, key:'fat', color:'#ed8936', max:10},
+    {label:`Carbs (${unit})`, key:'carbs', color:'#48bb78', max:20},
+    {label:`Fiber (${unit})`, key:'fiber', color:'#9f7aea', max:5},
+    {label:'Energy (kcal/100g)', key:'energy', color:'#f56565', max:600},
+  ];
+
+  const header='<tr><th>Nutrient</th>'+sel.map(f=>{
+    const tagC=f.brand==='Purina'?'tag-purina':f.brand==='Royal Canin'?'tag-rc':'tag-hills';
+    return `<th><span class="tag ${tagC}">${f.brand==='Purina'?'Purina':f.brand==='Royal Canin'?'RC':"Hill's"}</span><br>${f.name}<br><span style="font-weight:400;color:#718096">${f.species} · ${f.form}</span></th>`;
+  }).join('')+'</tr>';
+
+  const body=rows.map((r,ri)=>{
+    const cells=sel.map(f=>{
+      if(r.isText) return `<td>${f[r.key]||''}</td>`;
+      const rawVal = r.key==='energy' ? f.energy_per_100g : getVal(f,r.key);
+      if(rawVal==null) return '<td>—</td>';
+      const pct=Math.min(100,rawVal/r.max*100);
+      return `<td><div class="bar-cell">
+        <span class="td-val">${rawVal.toFixed(1)}</span>
+        <div class="bar-mini"><div class="bar-mini-fill bar-${r.key==='energy'?'energy':r.key}" style="width:${pct}%"></div></div>
+      </div></td>`;
+    }).join('');
+    const isNum=!r.isText;
+    return `<tr${isNum&&ri%2===0?' class="highlight"':''}><td><strong>${r.label}</strong></td>${cells}</tr>`;
+  }).join('');
+
+  tbl.innerHTML=header+body;
+  renderCharts(sel);
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+const BRAND_COLORS={
+  'Purina':'rgba(66,153,225,0.8)',
+  'Royal Canin':'rgba(237,137,54,0.8)',
+  "Hill's":'rgba(72,187,120,0.8)',
+};
+function getBgColor(f){return BRAND_COLORS[f.brand]||'rgba(100,100,100,0.7)';}
+
+function destroyCharts(){Object.values(charts).forEach(c=>c&&c.destroy());charts={};}
+
+function renderCharts(sel){
+  destroyCharts();
+  const labels=sel.map(f=>`${f.name}\n(${f.brand==='Royal Canin'?'RC':f.brand})`);
+  const bgColors=sel.map(f=>getBgColor(f));
+  const unit=getUnit();
+
+  function makeBar(id,label,data,color){
+    const ctx=document.getElementById(id).getContext('2d');
+    return new Chart(ctx,{type:'bar',data:{
+      labels,
+      datasets:[{label,data,backgroundColor:bgColors,borderColor:bgColors.map(c=>c.replace('0.8','1')),borderWidth:1}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      title:{display:true,text:label,font:{size:13,weight:'bold'},color:'#2d3748'}},
+      scales:{y:{beginAtZero:true,ticks:{font:{size:10}},title:{display:true,text:unit,font:{size:10}}},
+        x:{ticks:{font:{size:9},maxRotation:30}}}}});
+  }
+
+  charts.protein=makeBar('chartProtein','🥩 Protein',sel.map(f=>getVal(f,'protein')),'protein');
+  charts.fat=makeBar('chartFat','🧈 Fat',sel.map(f=>getVal(f,'fat')),'fat');
+  charts.carbs=makeBar('chartCarbs','🌾 Carbs (NFE)',sel.map(f=>getVal(f,'carbs')),'carbs');
+
+  // Stacked macros chart
+  const ctx4=document.getElementById('chartMacro').getContext('2d');
+  charts.macro=new Chart(ctx4,{type:'bar',
+    data:{labels,datasets:[
+      {label:'Protein',data:sel.map(f=>getVal(f,'protein')),backgroundColor:'rgba(66,153,225,0.85)'},
+      {label:'Fat',data:sel.map(f=>getVal(f,'fat')),backgroundColor:'rgba(237,137,54,0.85)'},
+      {label:'Carbs',data:sel.map(f=>getVal(f,'carbs')),backgroundColor:'rgba(72,187,120,0.85)'},
+      {label:'Fiber',data:sel.map(f=>getVal(f,'fiber')),backgroundColor:'rgba(159,122,234,0.85)'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:10}}},
+        title:{display:true,text:'Macronutrients (Stacked)',font:{size:13,weight:'bold'},color:'#2d3748'}},
+      scales:{x:{stacked:true,ticks:{font:{size:9},maxRotation:30}},
+        y:{stacked:true,beginAtZero:true,title:{display:true,text:unit,font:{size:10}}}}
+    }
+  });
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderCards();
+</script>
+</body>
+</html>
