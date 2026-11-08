@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetDiet Compare</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#f5f3ef;--ink:#1a1814;--ink2:#3d3a35;--ink3:#7a766f;--card:#fff;--bdr:#e2ddd6;--bdr2:#cdc8be;--acc:#2d6a4f;--acc2:#40916c;--accl:#d8f3dc;--warn:#e76f51;--warnl:#fde8e1;--gld:#e9c46a;--gldl:#fdf3d0;--shadow:0 2px 12px rgba(26,24,20,.07);--shadow-lg:0 8px 32px rgba(26,24,20,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app-hdr{background:var(--ink);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:baseline;gap:8px}
+.logo-main{font-size:1rem;font-weight:700;color:#fff;letter-spacing:-.01em}
+.logo-sub{font-size:.62rem;font-weight:500;color:#78716c;text-transform:uppercase;letter-spacing:.1em}
+.hdr-acts{display:flex;gap:7px;flex-wrap:wrap}
+.hbtn{padding:6px 13px;border-radius:6px;border:none;font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.hbtn-o{background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8)}
+.hbtn-o:hover{background:rgba(255,255,255,.1);color:#fff}
+.hbtn-p{background:var(--acc2);color:#fff}.hbtn-p:hover{background:var(--acc)}
+.layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 52px)}
+.lib{background:var(--card);border-right:1px solid var(--bdr);display:flex;flex-direction:column;height:calc(100vh - 52px);position:sticky;top:52px;overflow:hidden}
+.lib-hdr{padding:12px 14px 9px;border-bottom:1px solid var(--bdr)}
+.lib-title{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin-bottom:7px}
+.lib-search{width:100%;padding:6px 9px;background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;font-size:.76rem;font-family:inherit;color:var(--ink);outline:none;transition:border-color .15s}
+.lib-search:focus{border-color:var(--acc2)}.lib-search::placeholder{color:var(--ink3)}
+.ctabs{padding:7px 14px 0;display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--bdr)}
+.ctab{padding:3px 9px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--ink3);font-size:.62rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:7px}
+.ctab:hover{border-color:var(--acc2);color:var(--acc2)}.ctab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.lib-list{flex:1;overflow-y:auto;padding:7px}
+.grp-lbl{font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:7px 7px 3px;border-bottom:1px solid var(--bdr);margin-bottom:3px;margin-top:3px}
+.li{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:7px;cursor:pointer;transition:all .15s;border:1px solid transparent;margin-bottom:2px}
+.li:hover{background:var(--bg);border-color:var(--bdr)}.li.sel{background:rgba(45,106,79,.08);border-color:var(--acc)}
+.li-chk{width:15px;height:15px;border-radius:4px;border:2px solid var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.li.sel .li-chk{background:var(--acc);border-color:var(--acc)}
+.li-chk svg{display:none;width:9px;height:9px}.li.sel .li-chk svg{display:block}
+.li-info{flex:1;min-width:0}
+.li-name{font-size:.71rem;font-weight:500;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-meta{display:flex;gap:3px;margin-top:2px;flex-wrap:wrap}
+.tag{font-size:.52rem;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.cmp{padding:18px;overflow-y:auto}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;color:var(--ink3)}
+.empty-ico{font-size:2.8rem;margin-bottom:10px;opacity:.45}
+.empty-t{font-size:.95rem;font-weight:600;color:var(--ink2);margin-bottom:5px}
+.empty-s{font-size:.75rem;line-height:1.6}
+.sel-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:13px}
+.sel-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.s-chip{display:flex;align-items:center;gap:4px;padding:3px 9px;background:var(--ink);border-radius:20px;font-size:.67rem;font-weight:600;color:#fff}
+.s-chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.75rem;line-height:1;padding:0;margin-left:1px}
+.s-chip-x:hover{color:#fff}
+.sel-ct{font-size:.68rem;color:var(--ink3);white-space:nowrap}
+.ntoggle{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--card);border-radius:10px;border:1px solid var(--bdr)}
+.ntog{padding:4px 11px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--ink2);font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.ntog:hover{border-color:var(--acc2);color:var(--acc2)}.ntog.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.sec-t{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-bottom:9px;margin-top:18px}
+.sec-t:first-of-type{margin-top:0}
+.bar-grid{display:flex;flex-direction:column;gap:5px}
+.bar-row{background:var(--card);border-radius:9px;border:1px solid var(--bdr);padding:10px 13px;display:grid;grid-template-columns:170px 1fr auto;gap:9px;align-items:center;transition:border-color .15s}
+.bar-row:hover{border-color:var(--bdr2)}.bar-row.top{border-color:var(--acc2);background:rgba(45,106,79,.03)}
+.bp-name{font-size:.73rem;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .bp-name{color:var(--acc)}
+.bp-tags{display:flex;gap:3px;margin-top:2px;flex-wrap:wrap}
+.btrack{position:relative;height:21px;border-radius:4px;background:var(--bg);overflow:hidden}
+.bfill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);position:relative}
+.bval-in{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:.65rem;font-weight:700;font-family:'DM Mono',monospace;color:rgba(255,255,255,.95);white-space:nowrap}
+.bval-out{position:absolute;top:50%;transform:translateY(-50%);padding-left:5px;font-size:.65rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink2)}
+.bval{font-family:'DM Mono',monospace;font-size:.77rem;font-weight:500;color:var(--ink2);text-align:right;white-space:nowrap;min-width:65px}
+.dens-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:9px}
+.dc{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:13px;text-align:center;transition:all .2s}
+.dc:hover{border-color:var(--bdr2);transform:translateY(-1px);box-shadow:var(--shadow)}.dc.top{border-color:var(--acc2);background:rgba(45,106,79,.03)}
+.dc-v{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:500;color:var(--acc);line-height:1}
+.dc-u{font-size:.6rem;color:var(--ink3);font-weight:600;text-transform:uppercase;margin-top:1px}
+.dc-n{font-size:.7rem;font-weight:600;color:var(--ink2);margin-top:7px;line-height:1.3}
+.dc-tags{display:flex;gap:3px;justify-content:center;margin-top:4px;flex-wrap:wrap}
+.dc-bar{height:3px;border-radius:2px;background:var(--bdr);margin-top:8px;overflow:hidden}
+.dc-bfill{height:100%;border-radius:2px;background:var(--acc2);transition:width .5s}
+/* RER Calculator */
+.rer-card{background:var(--card);border:1.5px solid var(--acc2);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+.rer-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.rer-icon{font-size:1.3rem}
+.rer-title{font-size:.85rem;font-weight:700;color:var(--ink)}
+.rer-sub{font-size:.65rem;color:var(--ink3);margin-left:auto;font-family:'DM Mono',monospace;letter-spacing:.02em}
+.rer-input-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.rer-input-group{display:flex;flex-direction:column;gap:3px}
+.rer-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3)}
+.rer-bw{display:flex;align-items:center;gap:0;background:var(--bg);border:1.5px solid var(--bdr2);border-radius:7px;overflow:hidden;transition:border-color .15s}
+.rer-bw:focus-within{border-color:var(--acc2)}
+.rer-bw input{width:80px;padding:7px 8px;background:transparent;border:none;font-size:.92rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);outline:none}
+.rer-bw span{padding:0 8px 0 2px;font-size:.68rem;font-weight:600;color:var(--ink3)}
+.rer-result-box{background:var(--accl);border:1px solid #b7e4c7;border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rer-result-main{display:flex;align-items:baseline;gap:4px}
+.rer-result-v{font-size:1.45rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)}
+.rer-result-u{font-size:.7rem;font-weight:600;color:var(--acc)}
+.rer-result-formula{font-size:.62rem;color:var(--ink3);font-family:'DM Mono',monospace;margin-left:auto}
+.rer-divider{width:1px;height:32px;background:var(--bdr);flex-shrink:0}
+.rer-gram-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:7px;margin-top:12px}
+.rer-gram-card{background:var(--bg);border:1px solid var(--bdr);border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;transition:border-color .15s}
+.rer-gram-card:hover{border-color:var(--bdr2)}
+.rer-gram-name{font-size:.68rem;font-weight:600;color:var(--ink2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rer-gram-tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:1px}
+.rer-gram-val{font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px}
+.rer-gram-unit{font-size:.6rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.rer-gram-bar{height:3px;border-radius:2px;background:var(--bdr);margin-top:6px;overflow:hidden}
+.rer-gram-bfill{height:100%;border-radius:2px;transition:width .5s}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--bdr);background:var(--card)}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:.7rem}
+.tbl th{padding:7px 9px;text-align:left;font-size:.57rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);font-weight:700;background:var(--bg);border-bottom:2px solid var(--bdr);white-space:nowrap}
+.tbl td{padding:7px 9px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(0,0,0,.012)}
+.nc{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:500;text-align:right;white-space:nowrap}
+.nhi{color:var(--acc);font-weight:700}.nlo{color:var(--warn)}
+.nmcell{font-size:.73rem;font-weight:600;max-width:170px;line-height:1.3}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(26,24,20,.6);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center;padding:14px}
+.modal-ov.open{display:flex}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:20px;box-shadow:var(--shadow-lg)}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mtitle{font-size:.88rem;font-weight:700}
+.mclose{width:26px;height:26px;border-radius:5px;border:1px solid var(--bdr);background:transparent;color:var(--ink3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
+.mclose:hover{background:var(--bg)}
+.howto{background:var(--accl);border:1px solid #b7e4c7;border-radius:8px;padding:10px 12px;margin-bottom:13px}
+.howto-t{font-size:.7rem;font-weight:700;color:var(--acc);margin-bottom:3px}
+.howto-b{font-size:.66rem;color:var(--ink2);line-height:1.75}
+.flbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:3px;display:block}
+.finput,.fsel{width:100%;padding:7px 9px;background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;font-size:.76rem;font-family:inherit;color:var(--ink);outline:none;transition:border-color .15s;margin-bottom:9px}
+.finput:focus,.fsel:focus{border-color:var(--acc2)}.finput::placeholder{color:var(--ink3)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.fg2 .finput,.fg3 .finput{margin-bottom:0}
+.mb{padding:7px 16px;border-radius:6px;border:none;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.mb-p{background:var(--acc);color:#fff}.mb-p:hover{background:var(--acc2)}
+.mb-s{background:var(--bg);border:1px solid var(--bdr2);color:var(--ink2)}.mb-s:hover{border-color:var(--bdr)}
+.mb-d{background:transparent;border:1px solid #fcc;color:var(--warn)}.mb-d:hover{background:var(--warnl)}
+.mrow{display:flex;gap:6px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+textarea.finput{height:76px;resize:vertical;font-family:'DM Mono',monospace;font-size:.68rem}
+.smsg{padding:7px 11px;border-radius:6px;font-size:.71rem;font-weight:600;margin:7px 0;display:none}
+.smsg.show{display:block}.smsg-ok{background:var(--accl);color:var(--acc);border:1px solid #b7e4c7}.smsg-er{background:var(--warnl);color:var(--warn);border:1px solid #f9c4b8}
+.alist{display:flex;flex-direction:column;gap:4px;margin-top:7px}
+.aitem{display:flex;align-items:center;gap:5px;padding:5px 8px;background:var(--bg);border-radius:6px;border:1px solid var(--bdr);font-size:.7rem}
+.anm{flex:1;font-weight:600}.adl{background:none;border:none;color:var(--warn);cursor:pointer;font-size:.77rem;padding:2px 4px;border-radius:3px}
+.adl:hover{background:var(--warnl)}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+@media(max-width:720px){.layout{grid-template-columns:1fr}.lib{position:relative;top:auto;height:auto;max-height:300px;border-right:none;border-bottom:1px solid var(--bdr)}.bar-row{grid-template-columns:1fr;gap:4px}.dens-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+details summary{font-size:.71rem;font-weight:600;color:var(--ink2);cursor:pointer;user-select:none;margin-bottom:8px}
+</style>
+</head>
+<body>
+<header class="app-hdr">
+  <div class="logo"><span class="logo-main">🐾 VetDiet Compare</span><span class="logo-sub">Nutrient Analysis Tool</span></div>
+  <div class="hdr-acts">
+    <button class="hbtn hbtn-o" onclick="openModal()">➕ เพิ่มสูตรอาหาร</button>
+    <button class="hbtn hbtn-o" onclick="clearSel()">✕ ล้างการเลือก</button>
+  </div>
+</header>
+<div class="layout">
+  <div class="lib">
+    <div class="lib-hdr">
+      <div class="lib-title">📚 คลังสูตรอาหาร (<span id="lc">0</span>)</div>
+      <input class="lib-search" id="lsrch" placeholder="ค้นหาชื่อสูตร..." oninput="renderLib()">
+    </div>
+    <div class="ctabs" id="ctabs"></div>
+    <div class="lib-list" id="llist"></div>
+  </div>
+  <div class="cmp" id="cmp">
+    <div class="empty" id="cempty">
+      <div class="empty-ico">⚖️</div>
+      <div class="empty-t">เลือกสูตรอาหารเพื่อเปรียบเทียบ</div>
+      <div class="empty-s">เลือกได้หลายสูตรจากคลังด้านซ้าย<br>จะแสดงกราฟ nutrient/100 kcal และ calorie density ทันที</div>
+    </div>
+    <div id="ccont" style="display:none">
+      <div class="sel-bar"><div class="sel-chips" id="schips"></div><div class="sel-ct" id="sct"></div></div>
+      <!-- RER Calculator -->
+      <div class="rer-card" id="rerCard">
+        <div class="rer-hdr">
+          <span class="rer-icon">🔢</span>
+          <span class="rer-title">RER Calculator</span>
+          <span class="rer-sub">RER = 70 × BW<sup>0.75</sup> kcal/day</span>
+        </div>
+        <div class="rer-input-row">
+          <div class="rer-input-group">
+            <span class="rer-label">น้ำหนักตัว</span>
+            <div class="rer-bw">
+              <input type="number" id="rerBW" min="0.1" max="120" step="0.1" placeholder="0.0" oninput="calcRER()">
+              <span>kg</span>
+            </div>
+          </div>
+          <div id="rerResultBox" class="rer-result-box" style="display:none;flex:1;min-width:200px">
+            <div class="rer-result-main">
+              <span class="rer-result-v" id="rerKcal">—</span>
+              <span class="rer-result-u">kcal/day</span>
+            </div>
+            <div class="rer-divider"></div>
+            <span class="rer-result-formula" id="rerFormula"></span>
+          </div>
+        </div>
+        <div class="rer-gram-grid" id="rerGrams"></div>
+      </div>
+      <div class="ntoggle" id="ntog"></div>
+      <div id="charts"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-ov" id="mOv" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <div class="mhdr"><div class="mtitle">➕ เพิ่มสูตรอาหาร</div><button class="mclose" onclick="closeModal()">✕</button></div>
+  <div class="howto">
+    <div class="howto-t">📸 เพิ่มจากภาพคู่มือ</div>
+    <div class="howto-b">1. ส่งภาพตารางสารอาหารให้ Claude ในแชท<br>2. บอกว่า <b>"ช่วยแปลงเป็น JSON สำหรับ import ใน tool"</b><br>3. วาง JSON ด้านล่าง แล้วกด Import</div>
+  </div>
+  <label class="flbl">Paste JSON จาก Claude</label>
+  <textarea class="finput" id="jin" placeholder='{"products":[{"name":"...","brand":"...","condition":"gi","kcal_per_gram":3.52,"per100kcal":{"protein_g":7.1,"fat_g":3.3,"carb_nfe_g":13.5,"fiber_g":0.24,"calcium_mg":370,"phosphorus_mg":270,"sodium_mg":190,"potassium_mg":190}}]}'></textarea>
+  <button class="mb mb-p" onclick="doImport()" style="width:100%">📥 Import JSON</button>
+  <div class="smsg" id="smsg"></div>
+  <div style="margin:14px 0;border-top:1px solid var(--bdr);padding-top:12px">
+    <details>
+      <summary>✏️ กรอกข้อมูลเองทีละสูตร</summary>
+      <div style="margin-top:9px">
+        <div class="fg2" style="margin-bottom:9px">
+          <div><label class="flbl">ชื่อสูตร</label><input class="finput" id="m_nm" placeholder="EN Gastrointestinal"></div>
+          <div><label class="flbl">Brand</label><select class="fsel" id="m_br"><option value="hills">Hill's</option><option value="rc">Royal Canin</option><option value="purina">Purina</option><option value="other">Other</option></select></div>
+        </div>
+        <div class="fg2" style="margin-bottom:9px">
+          <div><label class="flbl">Condition</label><select class="fsel" id="m_co"><option value="gi">GI</option><option value="cardiac">Cardiac</option><option value="renal">Renal</option><option value="hepatic">Hepatic</option><option value="urinary">Urinary</option><option value="recovery">Recovery</option><option value="derma">Dermatology</option><option value="weight">Weight</option><option value="joint">Joint</option><option value="puppy">Puppy</option><option value="senior">Senior</option><option value="other">Other</option></select></div>
+          <div><label class="flbl">Calorie Density (kcal/g)</label><input class="finput" id="m_kc" type="number" step="0.01" placeholder="3.52"></div>
+        </div>
+        <label class="flbl" style="margin-bottom:5px">Nutrients per 100 kcal ME</label>
+        <div class="fg3" style="margin-bottom:9px">
+          <div><label class="flbl">Protein (g)</label><input class="finput" id="m_pr" type="number" step="0.01"></div>
+          <div><label class="flbl">Fat (g)</label><input class="finput" id="m_ft" type="number" step="0.01"></div>
+          <div><label class="flbl">Carb/NFE (g)</label><input class="finput" id="m_cb" type="number" step="0.01"></div>
+        </div>
+        <div class="fg3" style="margin-bottom:9px">
+          <div><label class="flbl">Fiber (g)</label><input class="finput" id="m_fb" type="number" step="0.01"></div>
+          <div><label class="flbl">Calcium (mg)</label><input class="finput" id="m_ca" type="number" step="1"></div>
+          <div><label class="flbl">Phosphorus (mg)</label><input class="finput" id="m_ph" type="number" step="1"></div>
+        </div>
+        <div class="fg2" style="margin-bottom:9px">
+          <div><label class="flbl">Sodium (mg)</label><input class="finput" id="m_na" type="number" step="1"></div>
+          <div><label class="flbl">Potassium (mg)</label><input class="finput" id="m_k" type="number" step="1"></div>
+        </div>
+        <button class="mb mb-p" onclick="addManual()" style="width:100%">➕ บันทึก</button>
+      </div>
+    </details>
+  </div>
+  <div style="border-top:1px solid var(--bdr);padding-top:11px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+      <label class="flbl" style="margin:0">เพิ่มเอง (<span id="cc">0</span>)</label>
+      <button class="mb mb-d" onclick="clearCust()" style="padding:3px 9px;font-size:.65rem">🗑 ลบทั้งหมด</button>
+    </div>
+    <div class="alist" id="alist"></div>
+  </div>
+  <div class="mrow"><button class="mb mb-s" onclick="closeModal()">ปิด</button></div>
+</div>
+</div>
+<script>
+const COND={gi:{l:'GI',c:'#2d6a4f',bg:'#d8f3dc'},cardiac:{l:'Cardiac',c:'#c1121f',bg:'#fde8e1'},renal:{l:'Renal',c:'#0077b6',bg:'#caf0f8'},hepatic:{l:'Hepatic',c:'#7b2d8b',bg:'#f0daf4'},urinary:{l:'Urinary',c:'#b5850a',bg:'#fdf3d0'},recovery:{l:'Recovery',c:'#40916c',bg:'#d8f3dc'},derma:{l:'Derma',c:'#e76f51',bg:'#fde8e1'},weight:{l:'Weight',c:'#495057',bg:'#e9ecef'},joint:{l:'Joint',c:'#6d6875',bg:'#e8e6eb'},puppy:{l:'Puppy',c:'#b5850a',bg:'#fdf3d0'},senior:{l:'Senior',c:'#6d4c41',bg:'#efebe9'},other:{l:'Other',c:'#78909c',bg:'#eceff1'}};
+const BRAND={hills:{l:"Hill's",c:'#c8102e',bg:'#fde8e1'},rc:{l:'Royal Canin',c:'#e87722',bg:'#fef3e2'},purina:{l:'Purina',c:'#0f4c81',bg:'#dce9ed'},other:{l:'Other',c:'#78909c',bg:'#eceff1'}};
+const NKS=[{k:'protein',l:'Protein',u:'g',d:1},{k:'fat',l:'Fat',u:'g',d:1},{k:'carb',l:'Carb/NFE',u:'g',d:1},{k:'fiber',l:'Fiber',u:'g',d:1},{k:'calcium',l:'Calcium',u:'mg',d:0},{k:'phosphorus',l:'Phosphorus',u:'mg',d:0},{k:'sodium',l:'Sodium',u:'mg',d:0},{k:'potassium',l:'Potassium',u:'mg',d:0}];
+const DB=[
+{id:'h01',brand:'hills',condition:'gi',name:"Hill's i/d GI Biome Dry (Chicken)",sn:"i/d GI Biome Dry",kcal_per_gram:3.30,protein:5.8,fat:3.5,carb:14.3,fiber:2.1,calcium:322,phosphorus:186,sodium:null,potassium:null},
+{id:'h02',brand:'hills',condition:'gi',name:"Hill's i/d GI Biome Stew (Ch & Veg)",sn:"i/d GI Biome Stew",kcal_per_gram:null,protein:6.6,fat:4.0,carb:12.1,fiber:1.9,calcium:283,phosphorus:149,sodium:null,potassium:null},
+{id:'h03',brand:'hills',condition:'gi',name:"Hill's i/d GI Biome Pouch (Ch & Carrot)",sn:"i/d GI Biome Pouch",kcal_per_gram:null,protein:6.6,fat:3.8,carb:12.7,fiber:1.9,calcium:292,phosphorus:147,sodium:null,potassium:null},
+{id:'h04',brand:'hills',condition:'gi',name:"Hill's i/d Dry (Chicken)",sn:"i/d Dry",kcal_per_gram:3.56,protein:6.7,fat:3.5,carb:13.4,fiber:0.5,calcium:223,phosphorus:153,sodium:null,potassium:null},
+{id:'h05',brand:'hills',condition:'gi',name:"Hill's i/d Dry Small Bites",sn:"i/d Dry SB",kcal_per_gram:3.76,protein:6.7,fat:3.5,carb:13.4,fiber:0.5,calcium:223,phosphorus:153,sodium:null,potassium:null},
+{id:'h06',brand:'hills',condition:'gi',name:"Hill's i/d Loaf (Turkey)",sn:"i/d Loaf Turkey",kcal_per_gram:null,protein:6.8,fat:3.8,carb:12.7,fiber:0.4,calcium:235,phosphorus:189,sodium:null,potassium:null},
+{id:'h07',brand:'hills',condition:'gi',name:"Hill's i/d Pouch (Ch & Carrot Stew)",sn:"i/d Pouch",kcal_per_gram:null,protein:6.7,fat:3.7,carb:12.9,fiber:0.5,calcium:243,phosphorus:188,sodium:null,potassium:null},
+{id:'h08',brand:'hills',condition:'gi',name:"Hill's i/d Stew (Ch & Veg)",sn:"i/d Stew",kcal_per_gram:null,protein:6.6,fat:3.9,carb:12.2,fiber:0.5,calcium:232,phosphorus:181,sodium:null,potassium:null},
+{id:'h09',brand:'hills',condition:'gi',name:"Hill's i/d Low Fat Dry",sn:"i/d LF Dry",kcal_per_gram:3.00,protein:7.2,fat:2.1,carb:16.3,fiber:0.5,calcium:235,phosphorus:177,sodium:null,potassium:null},
+{id:'h10',brand:'hills',condition:'gi',name:"Hill's i/d Low Fat Loaf",sn:"i/d LF Loaf",kcal_per_gram:null,protein:6.8,fat:2.2,carb:16.5,fiber:0.8,calcium:220,phosphorus:171,sodium:null,potassium:null},
+{id:'h11',brand:'hills',condition:'gi',name:"Hill's i/d Low Fat Stew",sn:"i/d LF Stew",kcal_per_gram:null,protein:6.3,fat:2.5,carb:16.3,fiber:0.5,calcium:249,phosphorus:168,sodium:null,potassium:null},
+{id:'h12',brand:'hills',condition:'gi',name:"Hill's i/d Low Fat Pouch",sn:"i/d LF Pouch",kcal_per_gram:null,protein:7.2,fat:2.3,carb:15.9,fiber:0.6,calcium:228,phosphorus:162,sodium:null,potassium:null},
+{id:'h13',brand:'hills',condition:'gi',name:"Hill's i/d Stress Dry",sn:"i/d Stress Dry",kcal_per_gram:3.00,protein:7.3,fat:2.1,carb:16.2,fiber:0.5,calcium:235,phosphorus:179,sodium:null,potassium:null},
+{id:'h14',brand:'hills',condition:'gi',name:"Hill's i/d Stress Stew",sn:"i/d Stress Stew",kcal_per_gram:null,protein:6.4,fat:2.4,carb:16.3,fiber:0.5,calcium:245,phosphorus:165,sodium:null,potassium:null},
+{id:'h15',brand:'hills',condition:'puppy',name:"Hill's i/d Puppy Dry",sn:"i/d Puppy Dry",kcal_per_gram:4.05,protein:7.2,fat:4.8,carb:9.7,fiber:0.5,calcium:262,phosphorus:214,sodium:null,potassium:null},
+{id:'h16',brand:'hills',condition:'puppy',name:"Hill's i/d Puppy Loaf (Turkey)",sn:"i/d Puppy Loaf",kcal_per_gram:null,protein:7.4,fat:4.4,carb:10.5,fiber:0.3,calcium:290,phosphorus:264,sodium:null,potassium:null},
+{id:'r01',brand:'rc',condition:'gi',name:"RC GI Standard Dry",sn:"RC GI Std Dry",kcal_per_gram:4.13,protein:6.06,fat:4.88,carb:5.38,fiber:0.46,calcium:291,phosphorus:218,sodium:97,potassium:170},
+{id:'r02',brand:'rc',condition:'gi',name:"RC GI Standard Can",sn:"RC GI Std Can",kcal_per_gram:1.11,protein:8.06,fat:5.34,carb:6.57,fiber:1.09,calcium:362,phosphorus:281,sodium:null,potassium:null},
+{id:'r03',brand:'rc',condition:'gi',name:"RC GI Low Fat Dry",sn:"RC GI LF Dry",kcal_per_gram:3.46,protein:6.34,fat:2.02,carb:15.43,fiber:0.52,calcium:317,phosphorus:231,sodium:173,potassium:173},
+{id:'r04',brand:'rc',condition:'gi',name:"RC GI Low Fat Can",sn:"RC GI LF Can",kcal_per_gram:0.92,protein:8.46,fat:1.84,carb:14.01,fiber:1.52,calcium:300,phosphorus:162,sodium:null,potassium:null},
+{id:'r05',brand:'rc',condition:'gi',name:"RC GI Low Fat Small Dog Dry",sn:"RC GI LF Small Dog",kcal_per_gram:3.46,protein:6.36,fat:2.03,carb:15.43,fiber:0.52,calcium:318,phosphorus:231,sodium:null,potassium:null},
+{id:'r06',brand:'rc',condition:'gi',name:"RC GI High Fibre Can",sn:"RC GI HF Can",kcal_per_gram:0.96,protein:7.72,fat:4.28,carb:10.86,fiber:2.61,calcium:282,phosphorus:167,sodium:104,potassium:167},
+{id:'r07',brand:'rc',condition:'gi',name:"RC GI High Fibre Dry",sn:"RC GI HF Dry",kcal_per_gram:3.17,protein:7.32,fat:5.08,carb:10.31,fiber:3.50,calcium:347,phosphorus:221,sodium:158,potassium:252},
+{id:'r08',brand:'rc',condition:'gi',name:"RC GI Low Fat Liquid",sn:"RC GI LF Liquid",kcal_per_gram:0.92,protein:9.26,fat:1.84,carb:17.03,fiber:0.0,calcium:216,phosphorus:185,sodium:102,potassium:216},
+{id:'r09',brand:'rc',condition:'gi',name:"RC GI High Energy Liquid",sn:"RC GI HE Liquid",kcal_per_gram:1.33,protein:6.79,fat:5.28,carb:8.88,fiber:1.51,calcium:211,phosphorus:196,sodium:143,potassium:219},
+{id:'r10',brand:'rc',condition:'puppy',name:"RC GI Puppy Can",sn:"RC GI Puppy Can",kcal_per_gram:0.97,protein:10.29,fat:5.97,carb:2.78,fiber:0.93,calcium:350,phosphorus:267,sodium:247,potassium:165},
+{id:'r11',brand:'rc',condition:'puppy',name:"RC GI Puppy Dry",sn:"RC GI Puppy Dry",kcal_per_gram:4.24,protein:6.85,fat:5.20,carb:7.53,fiber:0.28,calcium:331,phosphorus:236,sodium:null,potassium:189},
+{id:'r12',brand:'rc',condition:'hepatic',name:"RC Hepatic Dry",sn:"RC Hepatic Dry",kcal_per_gram:3.88,protein:4.12,fat:4.12,carb:13.27,fiber:0.59,calcium:188,phosphorus:129,sodium:52,potassium:211},
+{id:'r13',brand:'rc',condition:'hepatic',name:"RC Hepatic Can",sn:"RC Hepatic Can",kcal_per_gram:1.42,protein:4.71,fat:2.81,carb:15.60,fiber:1.76,calcium:246,phosphorus:169,sodium:56,potassium:162},
+{id:'r14',brand:'rc',condition:'recovery',name:"RC Recovery Can",sn:"RC Recovery Can",kcal_per_gram:1.15,protein:11.08,fat:5.58,carb:3.40,fiber:1.48,calcium:314,phosphorus:288,sodium:183,potassium:209},
+{id:'r15',brand:'rc',condition:'recovery',name:"RC Recovery Liquid",sn:"RC Recovery Liquid",kcal_per_gram:0.98,protein:8.39,fat:5.32,carb:5.22,fiber:0.0,calcium:205,phosphorus:174,sodium:102,potassium:215},
+{id:'p01',brand:'purina',condition:'gi',name:"Purina EN Gastrointestinal Dry",sn:"EN Gastrointestinal",kcal_per_gram:3.52,protein:7.14,fat:3.27,carb:13.54,fiber:0.24,calcium:370,phosphorus:270,sodium:190,potassium:190},
+];
+let custom=JSON.parse(localStorage.getItem('vdc2')||'[]');
+let sel=new Set();let cf='all';let actN=new Set(['protein','fat','carb','fiber','calcium','phosphorus','kcal_per_gram']);
+function allP(){return[...DB,...custom]}
+function sv(){localStorage.setItem('vdc2',JSON.stringify(custom))}
+function toN(v){const x=parseFloat(v);return isNaN(x)?null:x}
+function ctag(c){const m=COND[c]||COND.other;return`<span class="tag" style="background:${m.bg};color:${m.c}">${m.l}</span>`}
+function btag(b){const m=BRAND[b]||BRAND.other;return`<span class="tag" style="background:${m.bg};color:${m.c}">${m.l}</span>`}
+function bcol(b){return(BRAND[b]||BRAND.other).c}
+function buildCT(){
+  const cs=['all',...new Set(allP().map(p=>p.condition))];
+  document.getElementById('ctabs').innerHTML=cs.map(c=>`<button class="ctab ${cf===c?'on':''}" onclick="setCF('${c}',this)">${c==='all'?'ทั้งหมด':(COND[c]?.l||c)}</button>`).join('');
+}
+function setCF(c,btn){cf=c;document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderLib()}
+function renderLib(){
+  const q=document.getElementById('lsrch').value.toLowerCase();
+  let ps=allP();
+  if(cf!=='all')ps=ps.filter(p=>p.condition===cf);
+  if(q)ps=ps.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.sn||'').toLowerCase().includes(q)||(p.brand||'').toLowerCase().includes(q));
+  document.getElementById('lc').textContent=ps.length;
+  const grp={};ps.forEach(p=>{if(!grp[p.condition])grp[p.condition]=[];grp[p.condition].push(p)});
+  const co=['gi','cardiac','renal','hepatic','urinary','recovery','derma','weight','joint','puppy','senior','other'];
+  let h='';
+  co.forEach(c=>{
+    if(!grp[c])return;
+    const m=COND[c]||COND.other;
+    h+=`<div class="grp-lbl" style="color:${m.c}">${m.l} (${grp[c].length})</div>`;
+    grp[c].forEach(p=>{
+      const s=sel.has(p.id);
+      h+=`<div class="li ${s?'sel':''}" onclick="toggleSel('${p.id}')">
+        <div class="li-chk"><svg viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div>
+        <div class="li-info">
+          <div class="li-name" title="${p.name}">${p.sn||p.name}</div>
+          <div class="li-meta">${btag(p.brand)}${ctag(p.condition)}${p.kcal_per_gram?`<span class="tag" style="background:#f1f3f5;color:#495057">${p.kcal_per_gram} kcal/g</span>`:''}</div>
+        </div>
+      </div>`;
+    });
+  });
+  if(!h)h='<div style="text-align:center;padding:20px;color:var(--ink3);font-size:.72rem">ไม่พบสูตรอาหาร</div>';
+  document.getElementById('llist').innerHTML=h;
+}
+function toggleSel(id){if(sel.has(id))sel.delete(id);else sel.add(id);renderLib();renderCmp()}
+function clearSel(){sel.clear();renderLib();renderCmp()}
+function buildNT(){
+  document.getElementById('ntog').innerHTML=
+    NKS.map(n=>`<button class="ntog ${actN.has(n.k)?'on':''}" onclick="togN('${n.k}',this)">${n.l}</button>`).join('')+
+    `<button class="ntog ${actN.has('kcal_per_gram')?'on':''}" onclick="togN('kcal_per_gram',this)">Calorie Density</button>`;
+}
+function togN(k,btn){if(actN.has(k))actN.delete(k);else actN.add(k);btn.classList.toggle('on');renderCharts()}
+function renderCmp(){
+  const ps=allP().filter(p=>sel.has(p.id));
+  const em=document.getElementById('cempty'),co=document.getElementById('ccont');
+  if(!ps.length){em.style.display='flex';co.style.display='none';return}
+  em.style.display='none';co.style.display='block';
+  document.getElementById('schips').innerHTML=ps.map(p=>`<div class="s-chip">${p.sn||p.name}<button class="s-chip-x" onclick="toggleSel('${p.id}')">✕</button></div>`).join('');
+  document.getElementById('sct').textContent=ps.length+' สูตร';
+  buildNT();renderCharts();calcRER();
+}
+function renderCharts(){
+  const ps=allP().filter(p=>sel.has(p.id));
+  const area=document.getElementById('charts');
+  if(!ps.length){area.innerHTML='';return}
+  let h='';
+  // calorie density
+  if(actN.has('kcal_per_gram')){
+    const wk=ps.filter(p=>p.kcal_per_gram);
+    if(wk.length){
+      const mx=Math.max(...wk.map(p=>p.kcal_per_gram));
+      h+=`<div class="sec-t">⚡ Calorie Density (kcal/gram)</div><div class="dens-grid">`;
+      [...wk].sort((a,b)=>b.kcal_per_gram-a.kcal_per_gram).forEach(p=>{
+        const pct=(p.kcal_per_gram/mx*100).toFixed(1);
+        h+=`<div class="dc ${p.kcal_per_gram===mx?'top':''}">
+          <div class="dc-v">${p.kcal_per_gram.toFixed(2)}</div>
+          <div class="dc-u">kcal / gram</div>
+          <div class="dc-n">${p.sn||p.name}</div>
+          <div class="dc-tags">${btag(p.brand)}${ctag(p.condition)}</div>
+          <div class="dc-bar"><div class="dc-bfill" style="width:${pct}%;background:${bcol(p.brand)}"></div></div>
+        </div>`;
+      });
+      h+='</div>';
+    }
+  }
+  // bar charts
+  NKS.filter(n=>actN.has(n.k)).forEach(nk=>{
+    const wd=ps.filter(p=>p[nk.k]!=null);
+    if(!wd.length)return;
+    const mx=Math.max(...wd.map(p=>p[nk.k]));
+    const sorted=[...wd].sort((a,b)=>(b[nk.k]??0)-(a[nk.k]??0));
+    h+=`<div class="sec-t">${nk.l} <span style="color:var(--ink3);font-weight:400;text-transform:none;letter-spacing:0">(${nk.u} per 100 kcal)</span></div><div class="bar-grid">`;
+    sorted.forEach((p,i)=>{
+      const v=p[nk.k],pct=mx>0?(v/mx*100).toFixed(1):0,top=i===0;
+      const inside=parseFloat(pct)>22;
+      h+=`<div class="bar-row ${top?'top':''}">
+        <div><div class="bp-name">${p.sn||p.name}</div><div class="bp-tags">${btag(p.brand)}${ctag(p.condition)}</div></div>
+        <div class="btrack">
+          <div class="bfill" style="width:${pct}%;background:${bcol(p.brand)}">
+            ${inside?`<span class="bval-in">${v.toFixed(nk.d)} ${nk.u}</span>`:''}
+          </div>
+          ${!inside?`<span class="bval-out" style="left:${pct}%">${v.toFixed(nk.d)} ${nk.u}</span>`:''}
+        </div>
+        <div class="bval">${v.toFixed(nk.d)} ${nk.u}</div>
+      </div>`;
+    });
+    h+='</div>';
+  });
+  // summary table
+  if(ps.length>=2){
+    const nks=NKS.filter(n=>actN.has(n.k));
+    if(nks.length){
+      const mx2={},mn2={};
+      nks.forEach(n=>{const vs=ps.map(p=>p[n.k]).filter(v=>v!=null);mx2[n.k]=Math.max(...vs);mn2[n.k]=Math.min(...vs)});
+      h+=`<div class="sec-t" style="margin-top:22px">📋 ตารางสรุป</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>สูตรอาหาร</th><th>Brand</th><th>Condition</th>${actN.has('kcal_per_gram')?'<th>kcal/g</th>':''}
+        ${nks.map(n=>`<th>${n.l}<br><small style="font-weight:400">${n.u}/100kcal</small></th>`).join('')}</tr></thead>
+        <tbody>`;
+      ps.forEach(p=>{
+        h+=`<tr><td class="nmcell">${p.sn||p.name}</td><td>${btag(p.brand)}</td><td>${ctag(p.condition)}</td>
+          ${actN.has('kcal_per_gram')?`<td class="nc">${p.kcal_per_gram??'-'}</td>`:''}
+          ${nks.map(n=>{const v=p[n.k];const cl=v===mx2[n.k]?'nhi':v===mn2[n.k]?'nlo':'';return`<td class="nc ${cl}">${v!=null?v.toFixed(n.d):'-'}</td>`}).join('')}
+        </tr>`;
+      });
+      h+='</tbody></table></div>';
+    }
+  }
+  area.innerHTML=h;
+}
+function openModal(){document.getElementById('mOv').classList.add('open');refreshA()}
+function closeModal(){document.getElementById('mOv').classList.remove('open')}
+function doImport(){
+  const raw=document.getElementById('jin').value.trim();
+  if(!raw){setStat('er','กรุณาวาง JSON ก่อน');return}
+  try{
+    const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
+    if(s<0||e<0)throw new Error('ไม่พบ JSON object');
+    const obj=JSON.parse(raw.slice(s,e+1));
+    const list=obj.products||obj.data||(Array.isArray(obj)?obj:[obj]);
+    if(!list.length)throw new Error('ไม่พบข้อมูล');
+    let cnt=0;
+    list.forEach(p=>{
+      const pk=p.per100kcal||p;
+      custom.push({id:'j'+Date.now()+Math.random().toString(36).slice(2,6),brand:dBrand(p.brand||''),condition:p.condition||p.category||p.cat||'other',name:p.name||'Unknown',sn:(p.name||'Unknown').slice(0,36),
+        kcal_per_gram:toN(p.kcal_per_gram??p.kcal_g),
+        protein:toN(pk.protein_g??pk.protein),fat:toN(pk.fat_g??pk.fat),carb:toN(pk.carb_nfe_g??pk.carb??pk.nfe),
+        fiber:toN(pk.fiber_g??pk.fiber),calcium:toN(pk.calcium_mg??pk.calcium),phosphorus:toN(pk.phosphorus_mg??pk.phosphorus),
+        sodium:toN(pk.sodium_mg??pk.sodium),potassium:toN(pk.potassium_mg??pk.potassium)});
+      cnt++;
+    });
+    sv();refreshA();buildCT();renderLib();renderCmp();
+    document.getElementById('jin').value='';
+    setStat('ok','✅ เพิ่ม '+cnt+' สูตรเรียบร้อย');
+  }catch(e){setStat('er','❌ JSON ไม่ถูกต้อง: '+e.message)}
+}
+function addManual(){
+  const name=document.getElementById('m_nm').value.trim();
+  if(!name){alert('กรุณาใส่ชื่อสูตร');return}
+  custom.push({id:'m'+Date.now(),brand:document.getElementById('m_br').value,condition:document.getElementById('m_co').value||'other',name,sn:name.slice(0,36),
+    kcal_per_gram:toN(document.getElementById('m_kc').value),
+    protein:toN(document.getElementById('m_pr').value),fat:toN(document.getElementById('m_ft').value),carb:toN(document.getElementById('m_cb').value),
+    fiber:toN(document.getElementById('m_fb').value),calcium:toN(document.getElementById('m_ca').value),phosphorus:toN(document.getElementById('m_ph').value),
+    sodium:toN(document.getElementById('m_na').value),potassium:toN(document.getElementById('m_k').value)});
+  sv();refreshA();buildCT();renderLib();renderCmp();
+  ['m_nm','m_kc','m_pr','m_ft','m_cb','m_fb','m_ca','m_ph','m_na','m_k'].forEach(id=>document.getElementById(id).value='');
+  setStat('ok','✅ บันทึกเรียบร้อย');
+}
+function delC(id){custom=custom.filter(p=>p.id!==id);sel.delete(id);sv();refreshA();buildCT();renderLib();renderCmp()}
+function clearCust(){if(!custom.length)return;if(confirm('ลบทั้งหมด ('+custom.length+' สูตร)?')){custom.forEach(p=>sel.delete(p.id));custom=[];sv();refreshA();buildCT();renderLib();renderCmp()}}
+function refreshA(){
+  document.getElementById('cc').textContent=custom.length;
+  const el=document.getElementById('alist');
+  if(!custom.length){el.innerHTML='<div style="text-align:center;padding:14px;color:var(--ink3);font-size:.7rem">ยังไม่มีสูตรที่เพิ่ม</div>';return}
+  el.innerHTML=custom.map(p=>`<div class="aitem"><span class="anm">${p.sn||p.name}</span>${btag(p.brand)}${ctag(p.condition)}<button class="adl" onclick="delC('${p.id}')">✕</button></div>`).join('');
+}
+function setStat(type,msg){const el=document.getElementById('smsg');el.className='smsg show smsg-'+(type==='ok'?'ok':'er');el.textContent=msg;setTimeout(()=>el.classList.remove('show'),4000)}
+function dBrand(n){n=n.toLowerCase();if(n.includes('hill'))return'hills';if(n.includes('royal')||n.startsWith('rc'))return'rc';if(n.includes('purina'))return'purina';return'other'}
+
+// RER Calculator
+function calcRER(){
+  const bw=parseFloat(document.getElementById('rerBW').value);
+  const box=document.getElementById('rerResultBox');
+  const grids=document.getElementById('rerGrams');
+  if(!bw||bw<=0){box.style.display='none';grids.innerHTML='';return}
+  const rer=70*Math.pow(bw,0.75);
+  document.getElementById('rerKcal').textContent=rer.toFixed(1);
+  document.getElementById('rerFormula').textContent=`70 × ${bw}^0.75 = ${rer.toFixed(1)} kcal`;
+  box.style.display='flex';
+  // gram/day per selected product that has kcal_per_gram
+  const ps=allP().filter(p=>sel.has(p.id)&&p.kcal_per_gram);
+  if(!ps.length){grids.innerHTML='<div style="font-size:.68rem;color:var(--ink3)">เลือกสูตรอาหารที่มี Calorie Density เพื่อคำนวณกรัม/วัน</div>';return}
+  const grams=ps.map(p=>({p,g:rer/p.kcal_per_gram}));
+  const maxG=Math.max(...grams.map(x=>x.g));
+  grids.innerHTML=grams.sort((a,b)=>a.g-b.g).map(({p,g})=>{
+    const pct=(g/maxG*100).toFixed(1);
+    return`<div class="rer-gram-card">
+      <div class="rer-gram-name" title="${p.name}">${p.sn||p.name}</div>
+      <div class="rer-gram-tags">${btag(p.brand)}${ctag(p.condition)}</div>
+      <div class="rer-gram-val">${g.toFixed(1)}</div>
+      <div class="rer-gram-unit">กรัม / วัน (${p.kcal_per_gram} kcal/g)</div>
+      <div class="rer-gram-bar"><div class="rer-gram-bfill" style="width:${pct}%;background:${bcol(p.brand)}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+buildCT();renderLib();renderCmp();
+</script>
+</body>
+</html>
