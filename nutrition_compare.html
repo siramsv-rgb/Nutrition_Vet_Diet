@@ -97,6 +97,26 @@ tr.highlight{background:#ebf8ff}
 
 /* Tooltip */
 .tooltip-note{font-size:10px;color:#a0aec0;margin-top:6px;font-style:italic}
+
+/* ── RER CALCULATOR ─────────────────────────────────────────── */
+.rer-section{margin-top:20px;background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.rer-section h2{font-size:15px;font-weight:700;margin-bottom:4px;color:#1a365d}
+.rer-formula-hint{font-size:11px;color:#718096;margin-bottom:14px}
+.rer-input-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.rer-input-row label{font-size:13px;font-weight:600;color:#2d3748;white-space:nowrap}
+.rer-input-row input{width:90px;padding:7px 10px;border:1.5px solid #cbd5e0;border-radius:7px;font-size:14px;font-weight:700;text-align:center}
+.rer-result-box{background:#ebf4ff;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:none;align-items:center;gap:12px}
+.rer-kcal-big{font-size:28px;font-weight:800;color:#1a365d}
+.rer-kcal-label{font-size:11px;color:#4a5568}
+.rer-gram-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:4px}
+.rer-gram-card{background:#f7fafc;border-radius:8px;padding:10px 12px;border:1px solid #e2e8f0}
+.rer-gram-name{font-size:11px;font-weight:700;color:#2d3748;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.rer-gram-brand{font-size:9px;color:#718096;margin-bottom:6px}
+.rer-gram-val{font-size:22px;font-weight:800;color:#1a365d}
+.rer-gram-unit{font-size:9px;color:#718096;margin-bottom:6px}
+.rer-gram-bar-bg{height:5px;background:#e2e8f0;border-radius:3px}
+.rer-gram-bar-fill{height:5px;border-radius:3px;transition:width .4s}
+
 </style>
 </head>
 <body>
@@ -174,6 +194,26 @@ tr.highlight{background:#ebf8ff}
         <div class="chart-box"><canvas id="chartMacro"></canvas></div>
       </div>
     </div>
+
+    <!-- RER Calculator -->
+    <div class="rer-section" id="rerSection" style="display:none">
+      <h2>🧮 RER Calculator</h2>
+      <div class="rer-formula-hint">RER = 70 × BW(kg)<sup>0.75</sup> kcal/day</div>
+      <div class="rer-input-row">
+        <label>น้ำหนักตัว</label>
+        <input type="number" id="rerBW" min="0.1" step="0.1" placeholder="0.0" oninput="calcRER()">
+        <span style="font-size:13px;color:#4a5568">kg</span>
+      </div>
+      <div class="rer-result-box" id="rerResultBox">
+        <div>
+          <div class="rer-kcal-big" id="rerKcal">—</div>
+          <div class="rer-kcal-label">kcal / day</div>
+        </div>
+        <div style="font-size:11px;color:#4a5568;flex:1" id="rerFormula"></div>
+      </div>
+      <div class="rer-gram-grid" id="rerGrams"></div>
+    </div>
+
   </div>
 </div>
 
@@ -1273,6 +1313,7 @@ function toggleCard(id){
   else selectedIds.add(id);
   renderCards();
   if(currentView==='compare') renderCompare();
+  showRERIfSelected();
 }
 
 function clearSelection(){selectedIds.clear();renderCards();if(currentView==='compare')renderCompare();}
@@ -1320,6 +1361,7 @@ function renderCompare(){
 
   tbl.innerHTML=header+body;
   renderCharts(sel);
+  showRERIfSelected();
 }
 
 // ─── CHARTS ──────────────────────────────────────────────────────────────────
@@ -1369,6 +1411,43 @@ function renderCharts(sel){
         y:{stacked:true,beginAtZero:true,title:{display:true,text:unit,font:{size:10}}}}
     }
   });
+}
+
+
+// ─── RER CALCULATOR ──────────────────────────────────────────────────────────
+function calcRER(){
+  const bw = parseFloat(document.getElementById('rerBW').value);
+  const box = document.getElementById('rerResultBox');
+  const grids = document.getElementById('rerGrams');
+  if(!bw || bw<=0){ box.style.display='none'; grids.innerHTML=''; return; }
+  const rer = 70 * Math.pow(bw, 0.75);
+  document.getElementById('rerKcal').textContent = rer.toFixed(1);
+  document.getElementById('rerFormula').textContent = `70 × ${bw}^0.75 = ${rer.toFixed(1)} kcal`;
+  box.style.display = 'flex';
+  const sel = FOODS.filter(f => selectedIds.has(f.id) && f.energy_per_100g);
+  if(!sel.length){
+    grids.innerHTML='<div style="font-size:11px;color:#a0aec0">เลือกสูตรอาหารจากด้านซ้ายเพื่อคำนวณกรัม/วัน</div>';
+    return;
+  }
+  const grams = sel.map(f=>({f, g: rer/(f.energy_per_100g/100)}));
+  const maxG = Math.max(...grams.map(x=>x.g));
+  grids.innerHTML = grams.sort((a,b)=>a.g-b.g).map(({f,g})=>{
+    const pct = (g/maxG*100).toFixed(1);
+    const col = BRAND_COLORS[f.brand]||'rgba(100,100,100,0.8)';
+    return `<div class="rer-gram-card">
+      <div class="rer-gram-name" title="${f.name}">${f.name}</div>
+      <div class="rer-gram-brand">${f.brand} · ${f.form}</div>
+      <div class="rer-gram-val">${g.toFixed(1)}</div>
+      <div class="rer-gram-unit">กรัม / วัน (${(f.energy_per_100g/100).toFixed(2)} kcal/g)</div>
+      <div class="rer-gram-bar-bg"><div class="rer-gram-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function showRERIfSelected(){
+  const sec = document.getElementById('rerSection');
+  sec.style.display = selectedIds.size > 0 ? '' : 'none';
+  calcRER();
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
